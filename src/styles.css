@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    "Microsoft JhengHei",
+    "Noto Sans TC",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background: #eef3ea;
+  color: #1f2933;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+textarea {
+  scrollbar-color: #9ab78d #eef3ea;
+}
+
+.icon-button {
+  display: inline-flex;
+  height: 40px;
+  min-width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  background: rgb(255 255 255 / 0.12);
+  padding: 0 10px;
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.icon-button:hover {
+  background: rgb(255 255 255 / 0.22);
+  border-color: rgb(255 255 255 / 0.55);
+  transform: translateY(-1px);
+}
+
+.qr-placeholder {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border: 2px solid #6f9a5e;
+  background:
+    linear-gradient(45deg, transparent 46%, rgb(79 125 53 / 0.25) 46%, rgb(79 125 53 / 0.25) 54%, transparent 54%),
+    linear-gradient(-45deg, transparent 46%, rgb(79 125 53 / 0.18) 46%, rgb(79 125 53 / 0.18) 54%, transparent 54%),
+    #fff;
+  background-size: 12px 12px;
+  color: #3f6535;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.qr-placeholder.large {
+  width: 108px;
+  height: 108px;
+  font-size: 13px;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .shadow-soft {
+    box-shadow: none;
+  }
+}
