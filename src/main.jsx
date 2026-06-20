@@ -694,6 +694,47 @@ function buildPrintHtml(form, rows) {
 </html>`;
 }
 
+function createPdfCaptureNode(source) {
+  const clone = source.cloneNode(true);
+  clone.classList.add('pdf-capture-mode');
+  clone.style.position = 'fixed';
+  clone.style.left = '-10000px';
+  clone.style.top = '0';
+  clone.style.margin = '0';
+  clone.style.zIndex = '-1';
+
+  clone.querySelectorAll('.quote-items-table td').forEach((cell) => {
+    cell.style.paddingTop = '0';
+    cell.style.paddingBottom = '0';
+    cell.style.verticalAlign = 'middle';
+  });
+
+  clone.querySelectorAll('.quote-table-cell').forEach((cell) => {
+    cell.style.display = 'flex';
+    cell.style.alignItems = 'center';
+    cell.style.minHeight = '36px';
+    cell.style.height = '36px';
+    cell.style.lineHeight = '1.38';
+    cell.style.paddingTop = '0';
+    cell.style.paddingBottom = '0';
+  });
+
+  clone.querySelectorAll('.fee-table-row > span, .terms-table-row > div, .quote-summary-row').forEach((cell) => {
+    cell.style.display = 'flex';
+    cell.style.alignItems = 'center';
+    cell.style.minHeight = '34px';
+    cell.style.paddingTop = '0';
+    cell.style.paddingBottom = '0';
+  });
+
+  clone.querySelectorAll('.fee-table-row > span:first-child, .terms-table-row > div:nth-child(odd)').forEach((cell) => {
+    cell.style.justifyContent = 'center';
+  });
+
+  document.body.appendChild(clone);
+  return clone;
+}
+
 function App() {
   const [form, setForm] = useState(emptyForm);
   const [items, setItems] = useState(() => templateItemsToRows(CLEANING_TEMPLATES[emptyForm.cleaningType]));
@@ -1068,12 +1109,13 @@ function App() {
 
   async function downloadPdf() {
     const preview = quoteRef.current;
+    let captureNode = null;
     try {
       if (!preview) return;
       setStatus('正在產生 PDF...');
-      preview.classList.add('pdf-capture-mode');
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const canvas = await html2canvas(preview, { scale: 5, backgroundColor: '#ffffff', useCORS: true });
+      captureNode = createPdfCaptureNode(preview);
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const canvas = await html2canvas(captureNode, { scale: 5, backgroundColor: '#ffffff', useCORS: true });
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -1105,7 +1147,7 @@ function App() {
       printWindow.document.close();
       setStatus('已開啟列印視窗，可選擇另存為 PDF');
     } finally {
-      preview?.classList.remove('pdf-capture-mode');
+      captureNode?.remove();
     }
   }
 
