@@ -605,9 +605,9 @@ function buildPrintHtml(form, rows) {
     h1 { margin: 0 0 14px; text-align: center; font-size: 28px; font-weight: 500; }
     .meta-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #c8d9bd; border-left: 1px solid #c8d9bd; }
     .meta-row { display: grid; grid-template-columns: 88px minmax(0, 1fr); border-right: 1px solid #c8d9bd; border-bottom: 1px solid #c8d9bd; font-size: 12px; min-width: 0; }
-    .meta-row span { display: flex; min-width: 0; align-items: center; padding: 7px 8px; overflow-wrap: anywhere; word-break: break-word; line-height: 1.45; }
+    .meta-row span { display: flex; min-width: 0; align-items: center; padding: 0 8px; overflow-wrap: anywhere; word-break: break-word; line-height: 1.2; }
     .meta-row span:first-child { justify-content: center; background: rgba(255,255,255,0.35); font-weight: 700; text-align: center; }
-    .note-row { display: grid; grid-template-columns: 24px 1fr; gap: 8px; margin: 8px 0; font-size: 13px; line-height: 1.55; }
+    .note-row { display: grid; grid-template-columns: 24px 1fr; gap: 8px; margin: 8px 0; font-size: 13px; line-height: 1.2; }
     .note-row span { text-align: right; font-weight: 700; }
     .brand { text-align: center; word-break: break-all; overflow-wrap: anywhere; overflow: hidden; }
     .brand strong, .brand div { display: block; max-width: 100%; line-height: 1.35; }
@@ -703,11 +703,11 @@ function createPdfCaptureNode(source) {
   clone.style.margin = '0';
   clone.style.zIndex = '-1';
 
-  clone.querySelectorAll('.quote-items-table td').forEach((cell) => {
+  clone.querySelectorAll('.quote-items-table td, .quote-items-table th').forEach((cell) => {
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
     cell.style.verticalAlign = 'middle';
-    cell.style.lineHeight = '1.4';
+    cell.style.lineHeight = '1.2';
   });
 
   clone.querySelectorAll('.quote-table-cell').forEach((cell) => {
@@ -716,11 +716,12 @@ function createPdfCaptureNode(source) {
     cell.style.justifyContent = cell.classList.contains('justify-start') ? 'flex-start' : 'center';
     cell.style.minHeight = '40px';
     cell.style.height = '40px';
-    cell.style.lineHeight = '1.4';
+    cell.style.lineHeight = '1.2';
     cell.style.fontWeight = '400';
     cell.style.margin = '0';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
+    cell.style.whiteSpace = 'pre-line';
   });
 
   clone.querySelectorAll('.fee-table-row > span, .terms-table-row > div, .quote-summary-row').forEach((cell) => {
@@ -728,10 +729,11 @@ function createPdfCaptureNode(source) {
     cell.style.alignItems = 'center';
     cell.style.minHeight = '36px';
     cell.style.fontWeight = '500';
-    cell.style.lineHeight = '1.4';
+    cell.style.lineHeight = '1.2';
     cell.style.margin = '0';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
+    cell.style.whiteSpace = 'pre-line';
   });
 
   clone.querySelectorAll('.fee-table-row > span:first-child, .terms-table-row > div:nth-child(odd)').forEach((cell) => {
@@ -742,10 +744,33 @@ function createPdfCaptureNode(source) {
     cell.style.justifyContent = 'flex-start';
   });
 
-  clone.querySelectorAll('td > div, td > span, td > p, th > div, th > span, th > p').forEach((node) => {
+  clone.querySelectorAll('td > div, td > span, td > p, td > input, td > textarea, th > div, th > span, th > p, th > input, th > textarea').forEach((node) => {
+    node.style.display = 'flex';
+    node.style.alignItems = 'center';
     node.style.margin = '0';
-    node.style.padding = '0';
-    node.style.lineHeight = '1.4';
+    node.style.paddingTop = '0';
+    node.style.paddingBottom = '0';
+    node.style.lineHeight = '1.2';
+    node.style.whiteSpace = 'pre-line';
+  });
+
+  clone.querySelectorAll('td input, td textarea, th input, th textarea').forEach((node) => {
+    node.style.display = 'flex';
+    node.style.alignItems = 'center';
+    node.style.height = '100%';
+    node.style.minHeight = 'unset';
+    node.style.lineHeight = 'normal';
+    node.style.paddingTop = '0';
+    node.style.paddingBottom = '0';
+  });
+
+  clone.querySelectorAll('.quote-header .grid > div > div').forEach((cell) => {
+    cell.style.display = 'flex';
+    cell.style.alignItems = 'center';
+    cell.style.minHeight = '30px';
+    cell.style.paddingTop = '0';
+    cell.style.paddingBottom = '0';
+    cell.style.lineHeight = '1.2';
   });
 
   document.body.appendChild(clone);
