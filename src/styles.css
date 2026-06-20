@@ -177,6 +177,7 @@ textarea {
   min-height: 35px !important;
   align-items: center !important;
   line-height: 1.38 !important;
+  transform: translateY(2px);
 }
 
 .quote-export .fee-table-row > span,
@@ -186,12 +187,14 @@ textarea {
   min-height: 33px !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  transform: translateY(2px);
 }
 
 .quote-export .quote-summary-row {
   min-height: 35px !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  transform: translateY(2px);
 }
 
 .quote-export.pdf-capture-mode .quote-items-table tr {
@@ -210,6 +213,7 @@ textarea {
   align-items: center !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  transform: translateY(3px) !important;
 }
 
 .quote-export.pdf-capture-mode .fee-table-row > span,
@@ -219,6 +223,7 @@ textarea {
   align-items: center !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  transform: translateY(3px) !important;
 }
 
 .quote-export .fee-table-row > span:first-child,
