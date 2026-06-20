@@ -605,8 +605,8 @@ function buildPrintHtml(form, rows) {
     h1 { margin: 0 0 14px; text-align: center; font-size: 28px; font-weight: 500; }
     .meta-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #c8d9bd; border-left: 1px solid #c8d9bd; }
     .meta-row { display: grid; grid-template-columns: 88px minmax(0, 1fr); border-right: 1px solid #c8d9bd; border-bottom: 1px solid #c8d9bd; font-size: 12px; min-width: 0; }
-    .meta-row span { min-width: 0; padding: 7px 8px; overflow-wrap: anywhere; word-break: break-word; line-height: 1.45; }
-    .meta-row span:first-child { display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.35); font-weight: 700; text-align: center; }
+    .meta-row span { display: flex; min-width: 0; align-items: center; padding: 7px 8px; overflow-wrap: anywhere; word-break: break-word; line-height: 1.45; }
+    .meta-row span:first-child { justify-content: center; background: rgba(255,255,255,0.35); font-weight: 700; text-align: center; }
     .note-row { display: grid; grid-template-columns: 24px 1fr; gap: 8px; margin: 8px 0; font-size: 13px; line-height: 1.55; }
     .note-row span { text-align: right; font-weight: 700; }
     .brand { text-align: center; word-break: break-all; overflow-wrap: anywhere; overflow: hidden; }
@@ -630,6 +630,8 @@ function buildPrintHtml(form, rows) {
     .fee-panel:last-child { border-right: 0; }
     .fee-title { margin-bottom: 8px; color: #243423; font-weight: 700; overflow-wrap: anywhere; }
     .fee-grid { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 8px; color: #e11d1d; font-weight: 700; overflow-wrap: anywhere; }
+    .fee-grid span, .fee-note span { display: flex; align-items: center; min-height: 24px; }
+    .fee-grid span:nth-child(odd), .fee-note span:nth-child(odd) { justify-content: center; }
     .fee-note { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 8px; margin-top: 10px; color: #e11d1d; font-weight: 700; }
     .signature { margin-top: 18px; border-top: 1px solid #111; padding-top: 14px; font-size: 18px; color: #4b7d35; }
   </style>
