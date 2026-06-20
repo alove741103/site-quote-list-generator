@@ -1071,6 +1071,7 @@ function App() {
     try {
       if (!preview) return;
       setStatus('正在產生 PDF...');
+      preview.classList.add('pdf-capture-mode');
       await new Promise((resolve) => requestAnimationFrame(resolve));
       const canvas = await html2canvas(preview, { scale: 5, backgroundColor: '#ffffff', useCORS: true });
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
@@ -1103,6 +1104,8 @@ function App() {
       printWindow.document.write(buildPrintHtml(form, categoryRows));
       printWindow.document.close();
       setStatus('已開啟列印視窗，可選擇另存為 PDF');
+    } finally {
+      preview?.classList.remove('pdf-capture-mode');
     }
   }
 
@@ -1604,9 +1607,15 @@ function App() {
                     const highlighted = row.area === '注意事項' || row.area === '其他';
                     return (
                       <tr key={row.area} className={highlighted ? 'bg-[#fffed0]' : 'bg-white'}>
-                        <td className="border-t border-[#1e2d1b] px-3 py-4 text-center align-middle font-semibold text-[#57921f]">{row.number}</td>
-                        <td className="border-t border-[#1e2d1b] px-3 py-4 text-center align-middle font-semibold tracking-[0.28em] text-[#496d34]">{row.area}</td>
-                        <td className="border-t border-[#1e2d1b] px-4 py-4 align-middle leading-7 whitespace-pre-line text-stone-800"><RichText text={row.detail} /></td>
+                        <td className="border-t border-[#1e2d1b] px-3 py-0 text-center align-middle font-semibold text-[#57921f]">
+                          <div className="quote-table-cell justify-center">{row.number}</div>
+                        </td>
+                        <td className="border-t border-[#1e2d1b] px-3 py-0 text-center align-middle font-semibold tracking-[0.28em] text-[#496d34]">
+                          <div className="quote-table-cell justify-center">{row.area}</div>
+                        </td>
+                        <td className="border-t border-[#1e2d1b] px-4 py-0 align-middle leading-7 whitespace-pre-line text-stone-800">
+                          <div className="quote-table-cell justify-start"><RichText text={row.detail} /></div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -1650,10 +1659,10 @@ function App() {
                       </div>
                     </div>
                     <div className="border-y border-[#1e2d1b] bg-[#fffed0] text-red-600">
-                      <div className="flex items-center justify-center border-b border-[#1e2d1b] px-4 py-2 text-center text-[16px] font-bold whitespace-nowrap">總計費用：{totalFeeText(form)}</div>
+                      <div className="quote-summary-row flex items-center justify-center border-b border-[#1e2d1b] px-4 py-2 text-center text-[16px] font-bold whitespace-nowrap">總計費用：{totalFeeText(form)}</div>
                       <div className="grid grid-cols-2">
-                        <div className="flex min-w-0 items-center border-r border-[#1e2d1b] px-4 py-3 text-[15px] font-bold whitespace-nowrap">訂金匯款：{money(form.deposit)}</div>
-                        <div className="flex min-w-0 items-center px-4 py-3 text-[15px] font-bold whitespace-nowrap">尾款：{money(form.balance)}</div>
+                        <div className="quote-summary-row flex min-w-0 items-center border-r border-[#1e2d1b] px-4 py-3 text-[15px] font-bold whitespace-nowrap">訂金匯款：{money(form.deposit)}</div>
+                        <div className="quote-summary-row flex min-w-0 items-center px-4 py-3 text-[15px] font-bold whitespace-nowrap">尾款：{money(form.balance)}</div>
                       </div>
                     </div>
                     <div className="grid min-h-40 grid-cols-[1fr_150px] bg-white">
