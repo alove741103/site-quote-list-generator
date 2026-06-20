@@ -616,11 +616,12 @@ function buildPrintHtml(form, rows) {
     .qr { width: 52px; height: 52px; border: 2px solid #8bb078; background: repeating-linear-gradient(45deg,#fff,#fff 5px,#dbead1 5px,#dbead1 10px); }
     .logo { width: 62px; height: 62px; border: 2px solid #4b7d35; border-radius: 50%; display: grid; place-items: center; margin: 6px auto; font-size: 30px; font-weight: 700; }
     .bar { background: #548436; color: white; text-align: center; font-size: 24px; letter-spacing: 4px; padding: 7px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    td { border-top: 1px solid #111; padding: 12px 14px; vertical-align: middle; white-space: pre-line; }
+    .print-items { width: 100%; font-size: 13px; }
+    .print-row { display: grid; grid-template-columns: 54px 120px minmax(0, 1fr); }
+    .print-cell { display: flex; align-items: center; border-top: 1px solid #111; padding: 12px 14px; line-height: 1.2; white-space: pre-line; }
     .no { width: 54px; color: #57921f; text-align: center; }
     .area { width: 120px; color: #496d34; text-align: center; letter-spacing: 6px; }
-    .highlight td { background: #fffed0; }
+    .highlight .print-cell { background: #fffed0; }
     .bottom { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #111; }
     .box { min-height: 170px; padding: 18px; border-right: 1px solid #111; }
     .box:last-child { border-right: 0; }
@@ -666,11 +667,11 @@ function buildPrintHtml(form, rows) {
       </div>
     </section>
     <div class="bar">${escapeHtml(formatRoomSummary(form.roomSummary))}　施 作 項 目</div>
-    <table><tbody>
+    <div class="print-items">
       ${rows
-        .map((row) => `<tr class="${row.area === '注意事項' || row.area === '其他' ? 'highlight' : ''}"><td class="no">${row.number}</td><td class="area">${escapeHtml(row.area)}</td><td>${richTextHtml(row.detail)}</td></tr>`)
+        .map((row) => `<div class="print-row ${row.area === '注意事項' || row.area === '其他' ? 'highlight' : ''}"><div class="print-cell no">${row.number}</div><div class="print-cell area">${escapeHtml(row.area)}</div><div class="print-cell">${richTextHtml(row.detail)}</div></div>`)
         .join('')}
-    </tbody></table>
+    </div>
     <section class="bottom">
       <div class="box">
         <div class="fee-columns">
@@ -703,25 +704,29 @@ function createPdfCaptureNode(source) {
   clone.style.margin = '0';
   clone.style.zIndex = '-1';
 
-  clone.querySelectorAll('.quote-items-table td, .quote-items-table th').forEach((cell) => {
-    cell.style.paddingTop = '0';
-    cell.style.paddingBottom = '0';
-    cell.style.verticalAlign = 'middle';
-    cell.style.lineHeight = '1.2';
-  });
-
-  clone.querySelectorAll('.quote-table-cell').forEach((cell) => {
+  clone.querySelectorAll('.quote-grid-cell').forEach((cell) => {
     cell.style.display = 'flex';
     cell.style.alignItems = 'center';
-    cell.style.justifyContent = cell.classList.contains('justify-start') ? 'flex-start' : 'center';
-    cell.style.minHeight = '40px';
-    cell.style.height = '40px';
+    cell.style.justifyContent = cell.classList.contains('quote-cell-center') ? 'center' : 'flex-start';
     cell.style.lineHeight = '1.2';
-    cell.style.fontWeight = '400';
     cell.style.margin = '0';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
-    cell.style.whiteSpace = 'pre-line';
+    cell.style.minWidth = '0';
+    if (cell.classList.contains('quote-cell-multiline')) {
+      cell.style.alignContent = 'center';
+      cell.style.flexWrap = 'wrap';
+      cell.style.whiteSpace = 'pre-line';
+    }
+  });
+
+  clone.querySelectorAll('.quote-items-row').forEach((row) => {
+    row.style.height = '40px';
+  });
+
+  clone.querySelectorAll('.quote-items-row .quote-grid-cell').forEach((cell) => {
+    cell.style.minHeight = '40px';
+    cell.style.height = '40px';
   });
 
   clone.querySelectorAll('.fee-table-row > span, .terms-table-row > div, .quote-summary-row').forEach((cell) => {
@@ -744,33 +749,15 @@ function createPdfCaptureNode(source) {
     cell.style.justifyContent = 'flex-start';
   });
 
-  clone.querySelectorAll('td > div, td > span, td > p, td > input, td > textarea, th > div, th > span, th > p, th > input, th > textarea').forEach((node) => {
-    node.style.display = 'flex';
-    node.style.alignItems = 'center';
+  clone.querySelectorAll('.quote-grid-cell > div, .quote-grid-cell > span, .quote-grid-cell > p').forEach((node) => {
     node.style.margin = '0';
     node.style.paddingTop = '0';
     node.style.paddingBottom = '0';
     node.style.lineHeight = '1.2';
-    node.style.whiteSpace = 'pre-line';
   });
 
-  clone.querySelectorAll('td input, td textarea, th input, th textarea').forEach((node) => {
-    node.style.display = 'flex';
-    node.style.alignItems = 'center';
-    node.style.height = '100%';
-    node.style.minHeight = 'unset';
-    node.style.lineHeight = 'normal';
-    node.style.paddingTop = '0';
-    node.style.paddingBottom = '0';
-  });
-
-  clone.querySelectorAll('.quote-header .grid > div > div').forEach((cell) => {
-    cell.style.display = 'flex';
-    cell.style.alignItems = 'center';
+  clone.querySelectorAll('.quote-header .quote-grid-cell').forEach((cell) => {
     cell.style.minHeight = '30px';
-    cell.style.paddingTop = '0';
-    cell.style.paddingBottom = '0';
-    cell.style.lineHeight = '1.2';
   });
 
   document.body.appendChild(clone);
@@ -1184,9 +1171,6 @@ function App() {
       doc.save(`場勘報價清單_${pending(form.company)}.pdf`);
       setStatus('已下載 PDF');
     } catch {
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(buildPrintHtml(form, categoryRows));
-      printWindow.document.close();
       setStatus('已開啟列印視窗，可選擇另存為 PDF');
     } finally {
       captureNode?.remove();
@@ -1648,8 +1632,8 @@ function App() {
                   <div className="grid overflow-hidden border-l border-t border-[#c6d9ba] sm:grid-cols-2">
                     {metaRows.map(({ label, value, wide }) => (
                       <div key={label} className={`grid min-w-0 grid-cols-[88px_minmax(0,1fr)] border-b border-r border-[#c6d9ba] text-[12px] ${wide ? 'sm:col-span-2' : ''}`}>
-                        <div className="flex items-center justify-center bg-white/40 px-2 py-2 text-center font-bold leading-5">{label}</div>
-                        <div className="min-w-0 overflow-hidden break-words px-2 py-2 leading-5 text-[#385f2c] [overflow-wrap:anywhere]">{value}</div>
+                        <div className="quote-grid-cell quote-cell-center bg-white/40 px-2 text-center font-bold">{label}</div>
+                        <div className="quote-grid-cell quote-cell-start quote-cell-multiline min-w-0 overflow-hidden break-words px-2 text-[#385f2c] [overflow-wrap:anywhere]">{value}</div>
                       </div>
                     ))}
                   </div>
@@ -1680,31 +1664,24 @@ function App() {
                 {formatRoomSummary(form.roomSummary)}　施 作 項 目
               </div>
 
-              <table className="quote-items-table w-full border-collapse">
-                <colgroup>
-                  <col className="w-[54px]" />
-                  <col className="w-[118px]" />
-                  <col />
-                </colgroup>
-                <tbody>
+              <div className="quote-items-grid w-full">
                   {categoryRows.map((row) => {
                     const highlighted = row.area === '注意事項' || row.area === '其他';
                     return (
-                      <tr key={row.area} className={highlighted ? 'bg-[#fffed0]' : 'bg-white'}>
-                        <td className="border-t border-[#1e2d1b] px-3 py-0 text-center align-middle font-semibold text-[#57921f]">
-                          <div className="quote-table-cell justify-center">{row.number}</div>
-                        </td>
-                        <td className="border-t border-[#1e2d1b] px-3 py-0 text-center align-middle font-semibold tracking-[0.28em] text-[#496d34]">
-                          <div className="quote-table-cell justify-center">{row.area}</div>
-                        </td>
-                        <td className="border-t border-[#1e2d1b] px-4 py-0 align-middle leading-7 whitespace-pre-line text-[#3f463b]">
-                          <div className="quote-table-cell justify-start"><RichText text={row.detail} /></div>
-                        </td>
-                      </tr>
+                      <div key={row.area} className={`quote-items-row grid grid-cols-[54px_118px_minmax(0,1fr)] ${highlighted ? 'bg-[#fffed0]' : 'bg-white'}`}>
+                        <div className="quote-grid-cell quote-cell-center border-t border-[#1e2d1b] px-3 text-center font-semibold text-[#57921f]">
+                          {row.number}
+                        </div>
+                        <div className="quote-grid-cell quote-cell-center border-t border-[#1e2d1b] px-3 text-center font-semibold tracking-[0.28em] text-[#496d34]">
+                          {row.area}
+                        </div>
+                        <div className="quote-grid-cell quote-cell-start quote-cell-multiline border-t border-[#1e2d1b] px-4 text-[#3f463b]">
+                          <RichText text={row.detail} />
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+              </div>
 
               <section className="quote-bottom-section border-t border-[#1e2d1b]">
                 <div className="quote-bottom-grid grid bg-[#e8f3df] md:grid-cols-[1fr_1fr]">
@@ -1720,8 +1697,8 @@ function App() {
                             ['總計含稅', money(form.serviceTotal)]
                           ].map(([label, value]) => (
                             <div key={label} className="fee-table-row grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
-                              <span className="bg-red-50 px-2 py-2 font-bold">{label}</span>
-                              <span className="min-w-0 break-words px-2 py-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
+                              <span className="quote-grid-cell quote-cell-center bg-red-50 px-2 font-bold">{label}</span>
+                              <span className="quote-grid-cell quote-cell-start quote-cell-multiline min-w-0 break-words px-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
                             </div>
                           ))}
                         </div>
@@ -1735,18 +1712,18 @@ function App() {
                             ['總計含稅', money(form.cleaningTotal)]
                           ].map(([label, value]) => (
                             <div key={label} className="fee-table-row grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
-                              <span className="bg-red-50 px-2 py-2 font-bold">{label}</span>
-                              <span className="min-w-0 break-words px-2 py-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
+                              <span className="quote-grid-cell quote-cell-center bg-red-50 px-2 font-bold">{label}</span>
+                              <span className="quote-grid-cell quote-cell-start quote-cell-multiline min-w-0 break-words px-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
                             </div>
                           ))}
                         </div>
                       </div>
                     </div>
                     <div className="border-y border-[#1e2d1b] bg-[#fffed0] text-red-600">
-                      <div className="quote-summary-row flex items-center justify-center border-b border-[#1e2d1b] px-4 py-2 text-center text-[16px] font-bold whitespace-nowrap">總計費用：{totalFeeText(form)}</div>
+                      <div className="quote-grid-cell quote-cell-center quote-summary-row border-b border-[#1e2d1b] px-4 text-center text-[16px] font-bold whitespace-nowrap">總計費用：{totalFeeText(form)}</div>
                       <div className="grid grid-cols-2">
-                        <div className="quote-summary-row flex min-w-0 items-center border-r border-[#1e2d1b] px-4 py-3 text-[15px] font-bold whitespace-nowrap">訂金匯款：{money(form.deposit)}</div>
-                        <div className="quote-summary-row flex min-w-0 items-center px-4 py-3 text-[15px] font-bold whitespace-nowrap">尾款：{money(form.balance)}</div>
+                        <div className="quote-grid-cell quote-cell-start quote-summary-row min-w-0 border-r border-[#1e2d1b] px-4 text-[15px] font-bold whitespace-nowrap">訂金匯款：{money(form.deposit)}</div>
+                        <div className="quote-grid-cell quote-cell-start quote-summary-row min-w-0 px-4 text-[15px] font-bold whitespace-nowrap">尾款：{money(form.balance)}</div>
                       </div>
                     </div>
                     <div className="grid min-h-40 grid-cols-[1fr_150px] bg-white">
@@ -1763,12 +1740,12 @@ function App() {
                   <div className="quote-terms-column bg-[#e8f3df]">
                     <h4 className="border-b border-[#1e2d1b] bg-[#dcebd3] py-2 text-center text-lg font-bold tracking-[0.18em] text-moss-700">條 款 及 簽 核</h4>
                     <div className="terms-table-row grid grid-cols-[112px_1fr] border-b border-[#1e2d1b]">
-                      <div className="border-r border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">付款條件</div>
-                      <div className="px-3 py-3 text-red-600">{paymentConditionText(form)}</div>
-                      <div className="border-r border-t border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">付款期限</div>
-                      <div className="border-t border-[#1e2d1b] px-3 py-3">施作完畢後付款，匯費勿內扣。</div>
-                      <div className="border-r border-t border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">施作日期</div>
-                      <div className="border-t border-[#1e2d1b] px-3 py-3">{pending(form.serviceDate)}</div>
+                      <div className="quote-grid-cell quote-cell-center border-r border-[#1e2d1b] px-3 text-center font-semibold text-moss-700">付款條件</div>
+                      <div className="quote-grid-cell quote-cell-start quote-cell-multiline px-3 text-red-600">{paymentConditionText(form)}</div>
+                      <div className="quote-grid-cell quote-cell-center border-r border-t border-[#1e2d1b] px-3 text-center font-semibold text-moss-700">付款期限</div>
+                      <div className="quote-grid-cell quote-cell-start quote-cell-multiline border-t border-[#1e2d1b] px-3">施作完畢後付款，匯費勿內扣。</div>
+                      <div className="quote-grid-cell quote-cell-center border-r border-t border-[#1e2d1b] px-3 text-center font-semibold text-moss-700">施作日期</div>
+                      <div className="quote-grid-cell quote-cell-start border-t border-[#1e2d1b] px-3">{pending(form.serviceDate)}</div>
                     </div>
                     <div className="border-t border-[#1e2d1b] bg-[#f7f0c6] px-4 py-3 leading-7 text-moss-700">
                       驗收完畢完成驗收通過（照片/影片或放棄驗收），視同「完成通過驗收」，事後無法要求再回現場進行二次清潔。

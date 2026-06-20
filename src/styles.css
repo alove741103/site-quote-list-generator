@@ -112,21 +112,43 @@ textarea {
   font-size: 11.8px !important;
 }
 
+.quote-export .quote-grid-cell,
 .quote-export .quote-header .grid > div > div {
   display: flex !important;
   align-items: center !important;
-  min-height: 30px !important;
+  min-width: 0 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   line-height: 1.2 !important;
 }
 
+.quote-export .quote-cell-center,
 .quote-export .quote-header .grid > div > div:first-child {
   justify-content: center !important;
 }
 
+.quote-export .quote-cell-start,
 .quote-export .quote-header .grid > div > div:last-child {
   justify-content: flex-start !important;
+}
+
+.quote-export .quote-cell-multiline {
+  align-content: center !important;
+  flex-wrap: wrap !important;
+  white-space: pre-line !important;
+}
+
+.quote-export .quote-header .quote-grid-cell {
+  min-height: 30px !important;
+}
+
+.quote-export .quote-grid-cell > div,
+.quote-export .quote-grid-cell > span,
+.quote-export .quote-grid-cell > p {
+  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 1.2 !important;
 }
 
 .quote-export .quote-header .space-y-2 > :not([hidden]) ~ :not([hidden]) {
@@ -168,64 +190,9 @@ textarea {
   font-size: 1.45rem !important;
 }
 
-.quote-export .quote-items-table td {
-  vertical-align: middle !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-.quote-export table td,
-.quote-export table th {
-  vertical-align: middle !important;
-  line-height: 1.2 !important;
-}
-
-.quote-export table td > div,
-.quote-export table td > span,
-.quote-export table td > p,
-.quote-export table td > input,
-.quote-export table td > textarea,
-.quote-export table th > div,
-.quote-export table th > span,
-.quote-export table th > p,
-.quote-export table th > input,
-.quote-export table th > textarea {
-  display: flex !important;
-  align-items: center !important;
-  margin: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  line-height: 1.2 !important;
-}
-
-.quote-export table td input,
-.quote-export table td textarea,
-.quote-export table th input,
-.quote-export table th textarea {
-  display: flex !important;
-  align-items: center !important;
-  height: 100% !important;
-  min-height: unset !important;
-  line-height: normal !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-.quote-export .quote-table-cell {
-  display: flex !important;
+.quote-export .quote-items-row .quote-grid-cell {
   min-height: 40px !important;
-  align-items: center !important;
-  justify-content: center !important;
-  line-height: 1.2 !important;
   font-weight: 400 !important;
-  min-width: 0 !important;
-  white-space: pre-line !important;
-}
-
-.quote-export .quote-table-cell.justify-start {
-  flex-wrap: wrap !important;
-  align-content: center !important;
-  justify-content: flex-start !important;
 }
 
 .quote-export .fee-table-row > span,
@@ -250,17 +217,11 @@ textarea {
   white-space: pre-line !important;
 }
 
-.quote-export.pdf-capture-mode .quote-items-table tr {
+.quote-export.pdf-capture-mode .quote-items-row {
   height: 40px !important;
 }
 
-.quote-export.pdf-capture-mode .quote-items-table td {
-  height: 40px !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-.quote-export.pdf-capture-mode .quote-table-cell {
+.quote-export.pdf-capture-mode .quote-items-row .quote-grid-cell {
   height: 40px !important;
   min-height: 40px !important;
   padding-top: 0 !important;
@@ -284,15 +245,6 @@ textarea {
 
 .quote-export .terms-table-row > div:nth-child(even) {
   justify-content: flex-start !important;
-}
-
-.quote-export .quote-items-table td:nth-child(1) {
-  width: 48px !important;
-}
-
-.quote-export .quote-items-table td:nth-child(2) {
-  width: 118px !important;
-  letter-spacing: 0.12em !important;
 }
 
 .quote-export .quote-bottom-grid {
@@ -377,44 +329,7 @@ textarea {
     line-height: 1.35 !important;
   }
 
-  .quote-export table td,
-  .quote-export table th {
-    vertical-align: middle !important;
-    line-height: 1.2 !important;
-  }
-
-  .quote-export table td > div,
-  .quote-export table td > span,
-  .quote-export table td > p,
-  .quote-export table td > input,
-  .quote-export table td > textarea,
-  .quote-export table th > div,
-  .quote-export table th > span,
-  .quote-export table th > p,
-  .quote-export table th > input,
-  .quote-export table th > textarea {
-    display: flex !important;
-    align-items: center !important;
-    margin: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    line-height: 1.2 !important;
-  }
-
-  .quote-export table td input,
-  .quote-export table td textarea,
-  .quote-export table th input,
-  .quote-export table th textarea {
-    display: flex !important;
-    align-items: center !important;
-    height: 100% !important;
-    min-height: unset !important;
-    line-height: normal !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
-
-  .quote-export .quote-table-cell,
+  .quote-export .quote-grid-cell,
   .quote-export .fee-table-row > span,
   .quote-export .terms-table-row > div,
   .quote-export .quote-summary-row {
@@ -424,13 +339,5 @@ textarea {
     white-space: pre-line !important;
   }
 
-  .quote-export .quote-header .grid > div > div {
-    display: flex !important;
-    align-items: center !important;
-    min-height: 30px !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    line-height: 1.2 !important;
-  }
 }
 
