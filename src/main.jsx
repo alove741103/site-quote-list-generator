@@ -1084,7 +1084,6 @@ function App() {
       const x = (pageWidth - imgWidth) / 2;
       const y = (pageHeight - imgHeight) / 2;
 
-      doc.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight, undefined, 'FAST');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(1);
       const encodedImportText = encodePdfImportText(buildPlainText(form, categoryRows));
@@ -1094,6 +1093,7 @@ function App() {
         PDF_IMPORT_END
       ];
       doc.text(importLines, 3, 3);
+      doc.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight, undefined, 'FAST');
       doc.save(`場勘報價清單_${pending(form.company)}.pdf`);
       setStatus('已下載 PDF');
     } catch {
