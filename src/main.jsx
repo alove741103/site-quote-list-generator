@@ -1198,22 +1198,35 @@ function App() {
               onToggle={() => toggleSection('survey')}
               className="order-1"
             >
-              <label className="block rounded-md border border-[#dfe8d8] bg-[#fbfdf8] p-3">
-                <span className="mb-1 block text-sm font-semibold text-stone-800">清潔類型</span>
-                <span className="mb-2 block text-xs text-stone-500">
-                  選擇後會自動帶入常用施工項目、標準注意事項與其他事項，所有內容仍可手動編輯。
-                </span>
-                <select
-                  value={form.cleaningType}
-                  onChange={(event) => applyCleaningTemplate(event.target.value)}
-                  className="h-11 w-full rounded-md border border-[#cfd8c8] bg-white px-3 text-[15px] font-bold text-moss-700 outline-none transition focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
-                >
-                  {CLEANING_TEMPLATE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+              <label className="block rounded-md border-2 border-moss-700 bg-[#edf7e6] p-4 shadow-sm ring-4 ring-[#dcebd3]">
+                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <span className="inline-flex rounded-full bg-moss-700 px-3 py-1 text-xs font-black tracking-wide text-white">
+                      先選這裡
+                    </span>
+                    <span className="mt-2 block text-base font-black text-moss-900">清潔類型 / 套用範本</span>
+                    <span className="mt-1 block text-xs leading-5 text-moss-800">
+                      選擇後會自動帶入常用施工項目、標準注意事項與其他事項，所有內容仍可手動編輯。
+                    </span>
+                  </div>
+                  <span className="rounded-md bg-white px-3 py-2 text-xs font-bold text-moss-700 ring-1 ring-[#b9d0ad]">
+                    目前：{form.cleaningType}
+                  </span>
+                </div>
+                <div className="relative">
+                  <select
+                    value={form.cleaningType}
+                    onChange={(event) => applyCleaningTemplate(event.target.value)}
+                    className="h-13 w-full cursor-pointer appearance-none rounded-md border-2 border-moss-700 bg-white px-4 py-3 pr-11 text-[17px] font-black text-moss-800 shadow-inner outline-none transition hover:bg-[#fbfff8] focus:border-moss-800 focus:ring-4 focus:ring-moss-100"
+                  >
+                    {CLEANING_TEMPLATE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-moss-700" size={22} />
+                </div>
               </label>
 
               <section className="rounded-md border border-[#d7e5cf] bg-[#f4f9ef] p-3">
