@@ -81,9 +81,9 @@ textarea {
   width: 860px !important;
   max-width: none !important;
   font-size: 12.8px !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
   -webkit-font-smoothing: antialiased;
-  text-rendering: geometricPrecision;
+  text-rendering: optimizeLegibility;
 }
 
 .quote-export,
@@ -173,65 +173,70 @@ textarea {
 }
 
 .quote-export .quote-table-cell {
-  display: flex !important;
-  min-height: 38px !important;
-  align-items: center !important;
-  line-height: 1.32 !important;
+  display: grid !important;
+  min-height: 40px !important;
+  place-items: center !important;
+  align-content: center !important;
+  line-height: 1.3 !important;
+  font-weight: 400 !important;
+}
+
+.quote-export .quote-table-cell.justify-start {
+  justify-items: start !important;
 }
 
 .quote-export .fee-table-row > span,
 .quote-export .terms-table-row > div {
-  display: flex !important;
-  align-items: center !important;
-  min-height: 33px !important;
+  display: grid !important;
+  min-height: 34px !important;
+  align-content: center !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  font-weight: 500 !important;
 }
 
 .quote-export .quote-summary-row {
-  min-height: 35px !important;
+  display: grid !important;
+  min-height: 36px !important;
+  align-content: center !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
 
 .quote-export.pdf-capture-mode .quote-items-table tr {
-  height: 38px !important;
+  height: 40px !important;
 }
 
 .quote-export.pdf-capture-mode .quote-items-table td {
-  height: 38px !important;
+  height: 40px !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
 
 .quote-export.pdf-capture-mode .quote-table-cell {
-  height: 38px !important;
-  min-height: 38px !important;
-  align-items: center !important;
+  height: 40px !important;
+  min-height: 40px !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
-  font-weight: 600 !important;
-  transform: translateY(-1px) !important;
+  font-weight: 400 !important;
 }
 
 .quote-export.pdf-capture-mode .fee-table-row > span,
 .quote-export.pdf-capture-mode .terms-table-row > div,
 .quote-export.pdf-capture-mode .quote-summary-row {
-  min-height: 34px !important;
-  align-items: center !important;
+  min-height: 36px !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
-  font-weight: 600 !important;
-  transform: translateY(-1px) !important;
+  font-weight: 500 !important;
 }
 
 .quote-export .fee-table-row > span:first-child,
 .quote-export .terms-table-row > div:nth-child(odd) {
-  justify-content: center !important;
+  justify-items: center !important;
 }
 
 .quote-export .terms-table-row > div:nth-child(even) {
-  justify-content: flex-start !important;
+  justify-items: start !important;
 }
 
 .quote-export .quote-items-table td:nth-child(1) {

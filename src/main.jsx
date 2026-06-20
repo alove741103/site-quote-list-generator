@@ -710,27 +710,34 @@ function createPdfCaptureNode(source) {
   });
 
   clone.querySelectorAll('.quote-table-cell').forEach((cell) => {
-    cell.style.display = 'flex';
+    cell.style.display = 'grid';
+    cell.style.alignContent = 'center';
     cell.style.alignItems = 'center';
-    cell.style.minHeight = '36px';
-    cell.style.height = '36px';
-    cell.style.lineHeight = '1.38';
+    cell.style.justifyItems = cell.classList.contains('justify-start') ? 'start' : 'center';
+    cell.style.minHeight = '40px';
+    cell.style.height = '40px';
+    cell.style.lineHeight = '1.3';
+    cell.style.fontWeight = '400';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
-    cell.style.transform = 'translateY(-1px)';
   });
 
   clone.querySelectorAll('.fee-table-row > span, .terms-table-row > div, .quote-summary-row').forEach((cell) => {
-    cell.style.display = 'flex';
+    cell.style.display = 'grid';
+    cell.style.alignContent = 'center';
     cell.style.alignItems = 'center';
-    cell.style.minHeight = '34px';
+    cell.style.minHeight = '36px';
+    cell.style.fontWeight = '500';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
-    cell.style.transform = 'translateY(-1px)';
   });
 
   clone.querySelectorAll('.fee-table-row > span:first-child, .terms-table-row > div:nth-child(odd)').forEach((cell) => {
-    cell.style.justifyContent = 'center';
+    cell.style.justifyItems = 'center';
+  });
+
+  clone.querySelectorAll('.fee-table-row > span:nth-child(even), .terms-table-row > div:nth-child(even)').forEach((cell) => {
+    cell.style.justifyItems = 'start';
   });
 
   document.body.appendChild(clone);
@@ -1657,7 +1664,7 @@ function App() {
                         <td className="border-t border-[#1e2d1b] px-3 py-0 text-center align-middle font-semibold tracking-[0.28em] text-[#496d34]">
                           <div className="quote-table-cell justify-center">{row.area}</div>
                         </td>
-                        <td className="border-t border-[#1e2d1b] px-4 py-0 align-middle leading-7 whitespace-pre-line text-stone-800">
+                        <td className="border-t border-[#1e2d1b] px-4 py-0 align-middle leading-7 whitespace-pre-line text-[#3f463b]">
                           <div className="quote-table-cell justify-start"><RichText text={row.detail} /></div>
                         </td>
                       </tr>
