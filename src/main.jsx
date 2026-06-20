@@ -366,6 +366,13 @@ function sanitizeAiRows(rows) {
   return cleaned.length ? cleaned : [{ area: '其他', detail: '施工內容待確認' }];
 }
 
+function normalizeItemText(value) {
+  return stripColorTags(value)
+    .replace(/\s+/g, '')
+    .replace(/[，,。；;、.]/g, '')
+    .toLowerCase();
+}
+
 function linesFromText(text) {
   return pending(text)
     .split('\n')
@@ -837,16 +844,35 @@ function App() {
     setStatus('已套用文字顏色');
   }
 
+  function appendSupplementRows(rows) {
+    const validAreas = new Set(categoryConfig.map((category) => category.key));
+    const existingTexts = new Set(items.map((item) => normalizeItemText(item.detail)).filter(Boolean));
+    const additions = [];
+
+    rows.forEach((row) => {
+      const detail = stripColorTags(row.detail || '').trim();
+      const normalized = normalizeItemText(detail);
+      if (!detail || normalized === normalizeItemText('待確認') || normalized === normalizeItemText('施工內容待確認')) return;
+      if (existingTexts.has(normalized)) return;
+
+      const area = validAreas.has(row.area) ? row.area : detectCategory(`${row.area || ''} ${detail}`);
+      additions.push({ area: validAreas.has(area) ? area : '其他', detail });
+      existingTexts.add(normalized);
+    });
+
+    if (additions.length) setItems((current) => [...current, ...additions]);
+    return additions.length;
+  }
+
   async function organizeTextContent(text, mode = 'manual') {
     if (!text.trim()) {
-      setItems([{ area: '其他', detail: '施工內容待確認' }]);
-      setStatus('尚未偵測到可整理的場勘文字');
+      setStatus('尚未偵測到可解析的 LINE 補充內容');
       return;
     }
 
     const inferredCount = applyInferredFormFields(text);
     setIsOrganizing(true);
-    setStatus(mode === 'paste' ? '已偵測貼上內容，正在自動整理...' : '正在整理施工細項...');
+    setStatus(mode === 'paste' ? '已偵測貼上內容，正在解析 LINE 補充...' : '正在解析 LINE 補充項目...');
     try {
       const response = await fetch('/api/organize', {
         method: 'POST',
@@ -855,23 +881,27 @@ function App() {
       });
       if (!response.ok) throw new Error('AI API unavailable');
       const data = await response.json();
-      setItems(sanitizeAiRows(data.items));
-      setOpenSections((current) => ({ ...current, items: true }));
-      setStatus(mode === 'paste' ? `已自動分析並套入 ${inferredCount} 個客戶資料欄位與施作項目` : `已用 AI 整理完成，並套入 ${inferredCount} 個客戶資料欄位`);
-    } catch {
-      setItems(localOrganize(text));
+      const addedCount = appendSupplementRows(sanitizeAiRows(data.items));
       setOpenSections((current) => ({ ...current, items: true }));
       setStatus(
-        mode === 'paste'
-          ? `已自動套入 ${inferredCount} 個客戶資料欄位與施作項目；若要提升準確度，請設定 OpenAI API Key`
-          : `已用本機規則整理完成，並套入 ${inferredCount} 個客戶資料欄位；若要啟用 AI，請設定 OpenAI API Key`
+        addedCount
+          ? `已解析 LINE 補充：新增 ${addedCount} 個項目，並套入 ${inferredCount} 個客戶資料欄位`
+          : `已解析 LINE 補充，沒有新增重複項目；套入 ${inferredCount} 個客戶資料欄位`
+      );
+    } catch {
+      const addedCount = appendSupplementRows(localOrganize(text));
+      setOpenSections((current) => ({ ...current, items: true }));
+      setStatus(
+        addedCount
+          ? `已用本機規則新增 ${addedCount} 個 LINE 補充項目，並套入 ${inferredCount} 個客戶資料欄位`
+          : `已解析 LINE 補充，沒有新增重複項目；若要提升準確度，請設定 OpenAI API Key`
       );
     } finally {
       setIsOrganizing(false);
     }
   }
 
-  async function organizeText() {
+  async function parseLineSupplements() {
     await organizeTextContent(form.rawText, 'manual');
   }
 
@@ -951,7 +981,7 @@ function App() {
         rawText: text
       }));
       await organizeTextContent(text, 'file');
-      setStatus(`已匯入 ${file.name}，並自動套入資料`);
+      setStatus(`已匯入 ${file.name}，並解析為補充項目`);
     } catch (error) {
       setStatus(`匯入失敗：${error.message || '無法讀取檔案內容'}`);
     } finally {
@@ -1133,7 +1163,7 @@ function App() {
             <p className="text-xs font-bold uppercase text-moss-700">Professional site survey quotation</p>
             <h1 className="mt-1 text-2xl font-bold tracking-normal text-stone-950">場勘報價清單產生器</h1>
             <p className="mt-2 text-sm leading-6 text-stone-600">
-              貼上對話紀錄後自動整理施作項目，產出可供客戶確認的正式估價單內容。
+              先套用清潔範本，再將 LINE 對話解析為補充項目，產出可供客戶確認的正式估價單內容。
             </p>
           </div>
 
@@ -1191,7 +1221,7 @@ function App() {
                   <div>
                     <h2 className="text-sm font-bold text-stone-800">匯入既有估價單</h2>
                     <p className="mt-1 text-xs leading-5 text-stone-500">
-                      支援 PDF、Excel、CSV。匯入後會嘗試帶入客戶資料並自動整理施作項目。
+                      支援 PDF、Excel、CSV。匯入後會嘗試帶入客戶資料，施工內容只會新增為補充項目。
                     </p>
                   </div>
                   <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-white px-4 text-sm font-bold text-moss-700 ring-1 ring-[#c8d9bd] transition hover:bg-moss-50">
@@ -1205,9 +1235,9 @@ function App() {
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div>
                     <span className="block text-sm font-semibold text-stone-800">貼上 LINE 對話或場勘文字內容</span>
-                    <span className="block text-xs text-stone-500">貼上後會自動分析並套入右側 1-9 類施作項目。</span>
+                    <span className="block text-xs text-stone-500">貼上後可解析為補充項目，會保留目前清潔範本內容。</span>
                   </div>
-                  <span className="rounded-full bg-moss-50 px-3 py-1 text-xs font-bold text-moss-700">Auto classify</span>
+                  <span className="rounded-full bg-moss-50 px-3 py-1 text-xs font-bold text-moss-700">補充解析</span>
                 </div>
                 <textarea
                   value={form.rawText}
@@ -1218,21 +1248,21 @@ function App() {
                 />
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <button
-                    onClick={organizeText}
+                    onClick={parseLineSupplements}
                     disabled={isOrganizing}
                     className="inline-flex h-11 items-center gap-2 rounded-md bg-moss-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-moss-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Sparkles size={18} />
-                    {isOrganizing ? '整理中' : 'AI 自動整理'}
+                    {isOrganizing ? '解析中' : '解析 LINE 補充'}
                   </button>
-                  <span className="text-xs leading-5 text-stone-500">會依空間分類並自動展開「施工項目」。</span>
+                  <span className="text-xs leading-5 text-stone-500">會依空間分類新增到「施工項目」，重複內容不會再次加入。</span>
                 </div>
               </label>
             </AccordionSection>
 
             <AccordionSection
               title="施工項目"
-              description="AI 整理後會自動展開，可手動微調與標色。"
+              description="範本與 LINE 補充都會顯示在這裡，可手動微調與標色。"
               open={openSections.items}
               onToggle={() => toggleSection('items')}
               className="order-3"
@@ -1241,7 +1271,7 @@ function App() {
                 <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-sm font-bold text-stone-800">施作項目手動編輯</h2>
-                    <p className="mt-1 text-xs text-stone-500">AI 分類後可在這裡微調文字，也可以選取文字套用任意顏色。</p>
+                    <p className="mt-1 text-xs text-stone-500">範本項目與 LINE 補充都可在這裡微調文字，也可以選取文字套用任意顏色。</p>
                   </div>
                   <button
                     type="button"
