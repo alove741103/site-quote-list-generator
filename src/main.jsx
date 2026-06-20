@@ -707,37 +707,45 @@ function createPdfCaptureNode(source) {
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
     cell.style.verticalAlign = 'middle';
+    cell.style.lineHeight = '1.4';
   });
 
   clone.querySelectorAll('.quote-table-cell').forEach((cell) => {
-    cell.style.display = 'grid';
-    cell.style.alignContent = 'center';
+    cell.style.display = 'flex';
     cell.style.alignItems = 'center';
-    cell.style.justifyItems = cell.classList.contains('justify-start') ? 'start' : 'center';
+    cell.style.justifyContent = cell.classList.contains('justify-start') ? 'flex-start' : 'center';
     cell.style.minHeight = '40px';
     cell.style.height = '40px';
-    cell.style.lineHeight = '1.3';
+    cell.style.lineHeight = '1.4';
     cell.style.fontWeight = '400';
+    cell.style.margin = '0';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
   });
 
   clone.querySelectorAll('.fee-table-row > span, .terms-table-row > div, .quote-summary-row').forEach((cell) => {
-    cell.style.display = 'grid';
-    cell.style.alignContent = 'center';
+    cell.style.display = 'flex';
     cell.style.alignItems = 'center';
     cell.style.minHeight = '36px';
     cell.style.fontWeight = '500';
+    cell.style.lineHeight = '1.4';
+    cell.style.margin = '0';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
   });
 
   clone.querySelectorAll('.fee-table-row > span:first-child, .terms-table-row > div:nth-child(odd)').forEach((cell) => {
-    cell.style.justifyItems = 'center';
+    cell.style.justifyContent = 'center';
   });
 
   clone.querySelectorAll('.fee-table-row > span:nth-child(even), .terms-table-row > div:nth-child(even)').forEach((cell) => {
-    cell.style.justifyItems = 'start';
+    cell.style.justifyContent = 'flex-start';
+  });
+
+  clone.querySelectorAll('td > div, td > span, td > p, th > div, th > span, th > p').forEach((node) => {
+    node.style.margin = '0';
+    node.style.padding = '0';
+    node.style.lineHeight = '1.4';
   });
 
   document.body.appendChild(clone);
