@@ -1604,7 +1604,7 @@ function App() {
                       <tr key={row.area} className={highlighted ? 'bg-[#fffed0]' : 'bg-white'}>
                         <td className="border-t border-[#1e2d1b] px-3 py-4 text-center align-middle font-semibold text-[#57921f]">{row.number}</td>
                         <td className="border-t border-[#1e2d1b] px-3 py-4 text-center align-middle font-semibold tracking-[0.28em] text-[#496d34]">{row.area}</td>
-                        <td className="border-t border-[#1e2d1b] px-4 py-4 leading-7 whitespace-pre-line text-stone-800"><RichText text={row.detail} /></td>
+                        <td className="border-t border-[#1e2d1b] px-4 py-4 align-middle leading-7 whitespace-pre-line text-stone-800"><RichText text={row.detail} /></td>
                       </tr>
                     );
                   })}
@@ -1624,7 +1624,7 @@ function App() {
                             ['稅額', money(form.serviceTax)],
                             ['總計含稅', money(form.serviceTotal)]
                           ].map(([label, value]) => (
-                            <div key={label} className="grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
+                            <div key={label} className="fee-table-row grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
                               <span className="bg-red-50 px-2 py-2 font-bold">{label}</span>
                               <span className="min-w-0 break-words px-2 py-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
                             </div>
@@ -1639,7 +1639,7 @@ function App() {
                             ['稅額', money(form.cleaningTax)],
                             ['總計含稅', money(form.cleaningTotal)]
                           ].map(([label, value]) => (
-                            <div key={label} className="grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
+                            <div key={label} className="fee-table-row grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
                               <span className="bg-red-50 px-2 py-2 font-bold">{label}</span>
                               <span className="min-w-0 break-words px-2 py-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
                             </div>
@@ -1648,10 +1648,10 @@ function App() {
                       </div>
                     </div>
                     <div className="border-y border-[#1e2d1b] bg-[#fffed0] text-red-600">
-                      <div className="border-b border-[#1e2d1b] px-4 py-2 text-center text-[16px] font-bold whitespace-nowrap">總計費用：{totalFeeText(form)}</div>
+                      <div className="flex items-center justify-center border-b border-[#1e2d1b] px-4 py-2 text-center text-[16px] font-bold whitespace-nowrap">總計費用：{totalFeeText(form)}</div>
                       <div className="grid grid-cols-2">
-                        <div className="min-w-0 border-r border-[#1e2d1b] px-4 py-3 text-[15px] font-bold whitespace-nowrap">訂金匯款：{money(form.deposit)}</div>
-                        <div className="min-w-0 px-4 py-3 text-[15px] font-bold whitespace-nowrap">尾款：{money(form.balance)}</div>
+                        <div className="flex min-w-0 items-center border-r border-[#1e2d1b] px-4 py-3 text-[15px] font-bold whitespace-nowrap">訂金匯款：{money(form.deposit)}</div>
+                        <div className="flex min-w-0 items-center px-4 py-3 text-[15px] font-bold whitespace-nowrap">尾款：{money(form.balance)}</div>
                       </div>
                     </div>
                     <div className="grid min-h-40 grid-cols-[1fr_150px] bg-white">
@@ -1667,7 +1667,7 @@ function App() {
 
                   <div className="quote-terms-column bg-[#e8f3df]">
                     <h4 className="border-b border-[#1e2d1b] bg-[#dcebd3] py-2 text-center text-lg font-bold tracking-[0.18em] text-moss-700">條 款 及 簽 核</h4>
-                    <div className="grid grid-cols-[112px_1fr] border-b border-[#1e2d1b]">
+                    <div className="terms-table-row grid grid-cols-[112px_1fr] border-b border-[#1e2d1b]">
                       <div className="border-r border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">付款條件</div>
                       <div className="px-3 py-3 text-red-600">{paymentConditionText(form)}</div>
                       <div className="border-r border-t border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">付款期限</div>

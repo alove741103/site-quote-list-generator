@@ -113,8 +113,18 @@ textarea {
 }
 
 .quote-export .quote-header .grid > div > div {
+  display: flex !important;
+  align-items: center !important;
   padding-top: 0.42rem !important;
   padding-bottom: 0.42rem !important;
+}
+
+.quote-export .quote-header .grid > div > div:first-child {
+  justify-content: center !important;
+}
+
+.quote-export .quote-header .grid > div > div:last-child {
+  justify-content: flex-start !important;
 }
 
 .quote-export .quote-header .space-y-2 > :not([hidden]) ~ :not([hidden]) {
@@ -157,8 +167,24 @@ textarea {
 }
 
 .quote-export .quote-items-table td {
+  vertical-align: middle !important;
   padding-top: 0.58rem !important;
   padding-bottom: 0.58rem !important;
+}
+
+.quote-export .fee-table-row > span,
+.quote-export .terms-table-row > div {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.quote-export .fee-table-row > span:first-child,
+.quote-export .terms-table-row > div:nth-child(odd) {
+  justify-content: center !important;
+}
+
+.quote-export .terms-table-row > div:nth-child(even) {
+  justify-content: flex-start !important;
 }
 
 .quote-export .quote-items-table td:nth-child(1) {
