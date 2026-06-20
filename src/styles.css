@@ -221,6 +221,10 @@ textarea {
   height: 40px !important;
 }
 
+.quote-export.pdf-capture-mode {
+  box-shadow: none !important;
+}
+
 .quote-export.pdf-capture-mode .quote-items-row .quote-grid-cell {
   height: 40px !important;
   min-height: 40px !important;

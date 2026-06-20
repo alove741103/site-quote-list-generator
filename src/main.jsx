@@ -1156,7 +1156,8 @@ function App() {
       const imgWidth = canvas.width * ratio;
       const imgHeight = canvas.height * ratio;
       const x = (pageWidth - imgWidth) / 2;
-      const y = (pageHeight - imgHeight) / 2;
+      const visualCenterOffsetY = -8;
+      const y = Math.max(margin, (pageHeight - imgHeight) / 2 + visualCenterOffsetY);
 
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(1);
