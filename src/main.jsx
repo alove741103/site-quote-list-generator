@@ -846,22 +846,28 @@ function App() {
 
   function appendSupplementRows(rows) {
     const validAreas = new Set(categoryConfig.map((category) => category.key));
-    const existingTexts = new Set(items.map((item) => normalizeItemText(item.detail)).filter(Boolean));
-    const additions = [];
+    let addedCount = 0;
 
-    rows.forEach((row) => {
-      const detail = stripColorTags(row.detail || '').trim();
-      const normalized = normalizeItemText(detail);
-      if (!detail || normalized === normalizeItemText('待確認') || normalized === normalizeItemText('施工內容待確認')) return;
-      if (existingTexts.has(normalized)) return;
+    setItems((current) => {
+      const existingTexts = new Set(current.map((item) => normalizeItemText(item.detail)).filter(Boolean));
+      const additions = [];
 
-      const area = validAreas.has(row.area) ? row.area : detectCategory(`${row.area || ''} ${detail}`);
-      additions.push({ area: validAreas.has(area) ? area : '其他', detail });
-      existingTexts.add(normalized);
+      rows.forEach((row) => {
+        const detail = stripColorTags(row.detail || '').trim();
+        const normalized = normalizeItemText(detail);
+        if (!detail || normalized === normalizeItemText('待確認') || normalized === normalizeItemText('施工內容待確認')) return;
+        if (existingTexts.has(normalized)) return;
+
+        const area = validAreas.has(row.area) ? row.area : detectCategory(`${row.area || ''} ${detail}`);
+        additions.push({ area: validAreas.has(area) ? area : '其他', detail });
+        existingTexts.add(normalized);
+      });
+
+      addedCount = additions.length;
+      return additions.length ? [...current, ...additions] : current;
     });
 
-    if (additions.length) setItems((current) => [...current, ...additions]);
-    return additions.length;
+    return addedCount;
   }
 
   async function organizeTextContent(text, mode = 'manual') {
