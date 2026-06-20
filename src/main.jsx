@@ -605,9 +605,9 @@ function buildPrintHtml(form, rows) {
     h1 { margin: 0 0 14px; text-align: center; font-size: 28px; font-weight: 500; }
     .meta-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #c8d9bd; border-left: 1px solid #c8d9bd; }
     .meta-row { display: grid; grid-template-columns: 88px minmax(0, 1fr); border-right: 1px solid #c8d9bd; border-bottom: 1px solid #c8d9bd; font-size: 12px; min-width: 0; }
-    .meta-row span { display: flex; min-width: 0; align-items: center; padding: 0 8px; overflow-wrap: anywhere; word-break: break-word; line-height: 1.2; }
-    .meta-row span:first-child { justify-content: center; background: rgba(255,255,255,0.35); font-weight: 700; text-align: center; }
-    .note-row { display: grid; grid-template-columns: 24px 1fr; gap: 8px; margin: 8px 0; font-size: 13px; line-height: 1.2; }
+    .meta-row span { min-width: 0; padding: 7px 8px; overflow-wrap: anywhere; word-break: break-word; line-height: 1.45; }
+    .meta-row span:first-child { display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.35); font-weight: 700; text-align: center; }
+    .note-row { display: grid; grid-template-columns: 24px 1fr; gap: 8px; margin: 8px 0; font-size: 13px; line-height: 1.55; }
     .note-row span { text-align: right; font-weight: 700; }
     .brand { text-align: center; word-break: break-all; overflow-wrap: anywhere; overflow: hidden; }
     .brand strong, .brand div { display: block; max-width: 100%; line-height: 1.35; }
@@ -616,12 +616,11 @@ function buildPrintHtml(form, rows) {
     .qr { width: 52px; height: 52px; border: 2px solid #8bb078; background: repeating-linear-gradient(45deg,#fff,#fff 5px,#dbead1 5px,#dbead1 10px); }
     .logo { width: 62px; height: 62px; border: 2px solid #4b7d35; border-radius: 50%; display: grid; place-items: center; margin: 6px auto; font-size: 30px; font-weight: 700; }
     .bar { background: #548436; color: white; text-align: center; font-size: 24px; letter-spacing: 4px; padding: 7px; }
-    .print-items { width: 100%; font-size: 13px; }
-    .print-row { display: grid; grid-template-columns: 54px 120px minmax(0, 1fr); }
-    .print-cell { display: flex; align-items: center; border-top: 1px solid #111; padding: 12px 14px; line-height: 1.2; white-space: pre-line; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    td { border-top: 1px solid #111; padding: 12px 14px; vertical-align: middle; white-space: pre-line; }
     .no { width: 54px; color: #57921f; text-align: center; }
     .area { width: 120px; color: #496d34; text-align: center; letter-spacing: 6px; }
-    .highlight .print-cell { background: #fffed0; }
+    .highlight td { background: #fffed0; }
     .bottom { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #111; }
     .box { min-height: 170px; padding: 18px; border-right: 1px solid #111; }
     .box:last-child { border-right: 0; }
@@ -631,8 +630,6 @@ function buildPrintHtml(form, rows) {
     .fee-panel:last-child { border-right: 0; }
     .fee-title { margin-bottom: 8px; color: #243423; font-weight: 700; overflow-wrap: anywhere; }
     .fee-grid { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 8px; color: #e11d1d; font-weight: 700; overflow-wrap: anywhere; }
-    .fee-grid span, .fee-note span { display: flex; align-items: center; min-height: 24px; }
-    .fee-grid span:nth-child(odd), .fee-note span:nth-child(odd) { justify-content: center; }
     .fee-note { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 8px; margin-top: 10px; color: #e11d1d; font-weight: 700; }
     .signature { margin-top: 18px; border-top: 1px solid #111; padding-top: 14px; font-size: 18px; color: #4b7d35; }
   </style>
@@ -667,11 +664,11 @@ function buildPrintHtml(form, rows) {
       </div>
     </section>
     <div class="bar">${escapeHtml(formatRoomSummary(form.roomSummary))}　施 作 項 目</div>
-    <div class="print-items">
+    <table><tbody>
       ${rows
-        .map((row) => `<div class="print-row ${row.area === '注意事項' || row.area === '其他' ? 'highlight' : ''}"><div class="print-cell no">${row.number}</div><div class="print-cell area">${escapeHtml(row.area)}</div><div class="print-cell">${richTextHtml(row.detail)}</div></div>`)
+        .map((row) => `<tr class="${row.area === '注意事項' || row.area === '其他' ? 'highlight' : ''}"><td class="no">${row.number}</td><td class="area">${escapeHtml(row.area)}</td><td>${richTextHtml(row.detail)}</td></tr>`)
         .join('')}
-    </div>
+    </tbody></table>
     <section class="bottom">
       <div class="box">
         <div class="fee-columns">
@@ -693,75 +690,6 @@ function buildPrintHtml(form, rows) {
   <script>window.onload = () => window.print();</script>
 </body>
 </html>`;
-}
-
-function createPdfCaptureNode(source) {
-  const clone = source.cloneNode(true);
-  clone.classList.add('pdf-capture-mode');
-  clone.style.position = 'fixed';
-  clone.style.left = '-10000px';
-  clone.style.top = '0';
-  clone.style.margin = '0';
-  clone.style.zIndex = '-1';
-
-  clone.querySelectorAll('.quote-grid-cell').forEach((cell) => {
-    cell.style.display = 'flex';
-    cell.style.alignItems = 'center';
-    cell.style.justifyContent = cell.classList.contains('quote-cell-center') ? 'center' : 'flex-start';
-    cell.style.lineHeight = '1.2';
-    cell.style.margin = '0';
-    cell.style.paddingTop = '0';
-    cell.style.paddingBottom = '0';
-    cell.style.minWidth = '0';
-    if (cell.classList.contains('quote-cell-multiline')) {
-      cell.style.alignContent = 'center';
-      cell.style.flexWrap = 'wrap';
-      cell.style.whiteSpace = 'pre-line';
-    }
-  });
-
-  clone.querySelectorAll('.quote-items-row').forEach((row) => {
-    row.style.height = '40px';
-  });
-
-  clone.querySelectorAll('.quote-items-row .quote-grid-cell').forEach((cell) => {
-    cell.style.minHeight = '40px';
-    cell.style.height = '40px';
-  });
-
-  clone.querySelectorAll('.fee-table-row > span, .terms-table-row > div, .quote-summary-row').forEach((cell) => {
-    cell.style.display = 'flex';
-    cell.style.alignItems = 'center';
-    cell.style.minHeight = '36px';
-    cell.style.fontWeight = '500';
-    cell.style.lineHeight = '1.2';
-    cell.style.margin = '0';
-    cell.style.paddingTop = '0';
-    cell.style.paddingBottom = '0';
-    cell.style.whiteSpace = 'pre-line';
-  });
-
-  clone.querySelectorAll('.fee-table-row > span:first-child, .terms-table-row > div:nth-child(odd)').forEach((cell) => {
-    cell.style.justifyContent = 'center';
-  });
-
-  clone.querySelectorAll('.fee-table-row > span:nth-child(even), .terms-table-row > div:nth-child(even)').forEach((cell) => {
-    cell.style.justifyContent = 'flex-start';
-  });
-
-  clone.querySelectorAll('.quote-grid-cell > div, .quote-grid-cell > span, .quote-grid-cell > p').forEach((node) => {
-    node.style.margin = '0';
-    node.style.paddingTop = '0';
-    node.style.paddingBottom = '0';
-    node.style.lineHeight = '1.2';
-  });
-
-  clone.querySelectorAll('.quote-header .quote-grid-cell').forEach((cell) => {
-    cell.style.minHeight = '30px';
-  });
-
-  document.body.appendChild(clone);
-  return clone;
 }
 
 function App() {
@@ -1138,13 +1066,11 @@ function App() {
 
   async function downloadPdf() {
     const preview = quoteRef.current;
-    let captureNode = null;
     try {
       if (!preview) return;
       setStatus('正在產生 PDF...');
-      captureNode = createPdfCaptureNode(preview);
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      const canvas = await html2canvas(captureNode, { scale: 6, backgroundColor: '#ffffff', useCORS: true });
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const canvas = await html2canvas(preview, { scale: 5, backgroundColor: '#ffffff', useCORS: true });
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -1156,8 +1082,7 @@ function App() {
       const imgWidth = canvas.width * ratio;
       const imgHeight = canvas.height * ratio;
       const x = (pageWidth - imgWidth) / 2;
-      const visualCenterOffsetY = -8;
-      const y = Math.max(margin, (pageHeight - imgHeight) / 2 + visualCenterOffsetY);
+      const y = (pageHeight - imgHeight) / 2;
 
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(1);
@@ -1168,13 +1093,14 @@ function App() {
         PDF_IMPORT_END
       ];
       doc.text(importLines, 3, 3);
-      doc.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight, undefined, 'NONE');
+      doc.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight, undefined, 'FAST');
       doc.save(`場勘報價清單_${pending(form.company)}.pdf`);
       setStatus('已下載 PDF');
     } catch {
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(buildPrintHtml(form, categoryRows));
+      printWindow.document.close();
       setStatus('已開啟列印視窗，可選擇另存為 PDF');
-    } finally {
-      captureNode?.remove();
     }
   }
 
@@ -1633,8 +1559,8 @@ function App() {
                   <div className="grid overflow-hidden border-l border-t border-[#c6d9ba] sm:grid-cols-2">
                     {metaRows.map(({ label, value, wide }) => (
                       <div key={label} className={`grid min-w-0 grid-cols-[88px_minmax(0,1fr)] border-b border-r border-[#c6d9ba] text-[12px] ${wide ? 'sm:col-span-2' : ''}`}>
-                        <div className="quote-grid-cell quote-cell-center bg-white/40 px-2 text-center font-bold">{label}</div>
-                        <div className="quote-grid-cell quote-cell-start quote-cell-multiline min-w-0 overflow-hidden break-words px-2 text-[#385f2c] [overflow-wrap:anywhere]">{value}</div>
+                        <div className="flex items-center justify-center bg-white/40 px-2 py-2 text-center font-bold leading-5">{label}</div>
+                        <div className="min-w-0 overflow-hidden break-words px-2 py-2 leading-5 text-[#385f2c] [overflow-wrap:anywhere]">{value}</div>
                       </div>
                     ))}
                   </div>
@@ -1665,24 +1591,25 @@ function App() {
                 {formatRoomSummary(form.roomSummary)}　施 作 項 目
               </div>
 
-              <div className="quote-items-grid w-full">
+              <table className="quote-items-table w-full border-collapse">
+                <colgroup>
+                  <col className="w-[54px]" />
+                  <col className="w-[118px]" />
+                  <col />
+                </colgroup>
+                <tbody>
                   {categoryRows.map((row) => {
                     const highlighted = row.area === '注意事項' || row.area === '其他';
                     return (
-                      <div key={row.area} className={`quote-items-row grid grid-cols-[54px_118px_minmax(0,1fr)] ${highlighted ? 'bg-[#fffed0]' : 'bg-white'}`}>
-                        <div className="quote-grid-cell quote-cell-center border-t border-[#1e2d1b] px-3 text-center font-semibold text-[#57921f]">
-                          {row.number}
-                        </div>
-                        <div className="quote-grid-cell quote-cell-center border-t border-[#1e2d1b] px-3 text-center font-semibold tracking-[0.28em] text-[#496d34]">
-                          {row.area}
-                        </div>
-                        <div className="quote-grid-cell quote-cell-start quote-cell-multiline border-t border-[#1e2d1b] px-4 text-[#3f463b]">
-                          <RichText text={row.detail} />
-                        </div>
-                      </div>
+                      <tr key={row.area} className={highlighted ? 'bg-[#fffed0]' : 'bg-white'}>
+                        <td className="border-t border-[#1e2d1b] px-3 py-4 text-center align-middle font-semibold text-[#57921f]">{row.number}</td>
+                        <td className="border-t border-[#1e2d1b] px-3 py-4 text-center align-middle font-semibold tracking-[0.28em] text-[#496d34]">{row.area}</td>
+                        <td className="border-t border-[#1e2d1b] px-4 py-4 leading-7 whitespace-pre-line text-stone-800"><RichText text={row.detail} /></td>
+                      </tr>
                     );
                   })}
-              </div>
+                </tbody>
+              </table>
 
               <section className="quote-bottom-section border-t border-[#1e2d1b]">
                 <div className="quote-bottom-grid grid bg-[#e8f3df] md:grid-cols-[1fr_1fr]">
@@ -1697,9 +1624,9 @@ function App() {
                             ['稅額', money(form.serviceTax)],
                             ['總計含稅', money(form.serviceTotal)]
                           ].map(([label, value]) => (
-                            <div key={label} className="fee-table-row grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
-                              <span className="quote-grid-cell quote-cell-center bg-red-50 px-2 font-bold">{label}</span>
-                              <span className="quote-grid-cell quote-cell-start quote-cell-multiline min-w-0 break-words px-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
+                            <div key={label} className="grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
+                              <span className="bg-red-50 px-2 py-2 font-bold">{label}</span>
+                              <span className="min-w-0 break-words px-2 py-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
                             </div>
                           ))}
                         </div>
@@ -1712,19 +1639,19 @@ function App() {
                             ['稅額', money(form.cleaningTax)],
                             ['總計含稅', money(form.cleaningTotal)]
                           ].map(([label, value]) => (
-                            <div key={label} className="fee-table-row grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
-                              <span className="quote-grid-cell quote-cell-center bg-red-50 px-2 font-bold">{label}</span>
-                              <span className="quote-grid-cell quote-cell-start quote-cell-multiline min-w-0 break-words px-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
+                            <div key={label} className="grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
+                              <span className="bg-red-50 px-2 py-2 font-bold">{label}</span>
+                              <span className="min-w-0 break-words px-2 py-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
                             </div>
                           ))}
                         </div>
                       </div>
                     </div>
                     <div className="border-y border-[#1e2d1b] bg-[#fffed0] text-red-600">
-                      <div className="quote-grid-cell quote-cell-center quote-summary-row border-b border-[#1e2d1b] px-4 text-center text-[16px] font-bold whitespace-nowrap">總計費用：{totalFeeText(form)}</div>
+                      <div className="border-b border-[#1e2d1b] px-4 py-2 text-center text-[16px] font-bold whitespace-nowrap">總計費用：{totalFeeText(form)}</div>
                       <div className="grid grid-cols-2">
-                        <div className="quote-grid-cell quote-cell-start quote-summary-row min-w-0 border-r border-[#1e2d1b] px-4 text-[15px] font-bold whitespace-nowrap">訂金匯款：{money(form.deposit)}</div>
-                        <div className="quote-grid-cell quote-cell-start quote-summary-row min-w-0 px-4 text-[15px] font-bold whitespace-nowrap">尾款：{money(form.balance)}</div>
+                        <div className="min-w-0 border-r border-[#1e2d1b] px-4 py-3 text-[15px] font-bold whitespace-nowrap">訂金匯款：{money(form.deposit)}</div>
+                        <div className="min-w-0 px-4 py-3 text-[15px] font-bold whitespace-nowrap">尾款：{money(form.balance)}</div>
                       </div>
                     </div>
                     <div className="grid min-h-40 grid-cols-[1fr_150px] bg-white">
@@ -1740,13 +1667,13 @@ function App() {
 
                   <div className="quote-terms-column bg-[#e8f3df]">
                     <h4 className="border-b border-[#1e2d1b] bg-[#dcebd3] py-2 text-center text-lg font-bold tracking-[0.18em] text-moss-700">條 款 及 簽 核</h4>
-                    <div className="terms-table-row grid grid-cols-[112px_1fr] border-b border-[#1e2d1b]">
-                      <div className="quote-grid-cell quote-cell-center border-r border-[#1e2d1b] px-3 text-center font-semibold text-moss-700">付款條件</div>
-                      <div className="quote-grid-cell quote-cell-start quote-cell-multiline px-3 text-red-600">{paymentConditionText(form)}</div>
-                      <div className="quote-grid-cell quote-cell-center border-r border-t border-[#1e2d1b] px-3 text-center font-semibold text-moss-700">付款期限</div>
-                      <div className="quote-grid-cell quote-cell-start quote-cell-multiline border-t border-[#1e2d1b] px-3">施作完畢後付款，匯費勿內扣。</div>
-                      <div className="quote-grid-cell quote-cell-center border-r border-t border-[#1e2d1b] px-3 text-center font-semibold text-moss-700">施作日期</div>
-                      <div className="quote-grid-cell quote-cell-start border-t border-[#1e2d1b] px-3">{pending(form.serviceDate)}</div>
+                    <div className="grid grid-cols-[112px_1fr] border-b border-[#1e2d1b]">
+                      <div className="border-r border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">付款條件</div>
+                      <div className="px-3 py-3 text-red-600">{paymentConditionText(form)}</div>
+                      <div className="border-r border-t border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">付款期限</div>
+                      <div className="border-t border-[#1e2d1b] px-3 py-3">施作完畢後付款，匯費勿內扣。</div>
+                      <div className="border-r border-t border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">施作日期</div>
+                      <div className="border-t border-[#1e2d1b] px-3 py-3">{pending(form.serviceDate)}</div>
                     </div>
                     <div className="border-t border-[#1e2d1b] bg-[#f7f0c6] px-4 py-3 leading-7 text-moss-700">
                       驗收完畢完成驗收通過（照片/影片或放棄驗收），視同「完成通過驗收」，事後無法要求再回現場進行二次清潔。
