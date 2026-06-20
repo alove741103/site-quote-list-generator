@@ -717,7 +717,6 @@ function createPdfCaptureNode(source) {
     cell.style.lineHeight = '1.38';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
-    cell.style.transform = 'translateY(3px)';
   });
 
   clone.querySelectorAll('.fee-table-row > span, .terms-table-row > div, .quote-summary-row').forEach((cell) => {
@@ -726,7 +725,6 @@ function createPdfCaptureNode(source) {
     cell.style.minHeight = '34px';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
-    cell.style.transform = 'translateY(3px)';
   });
 
   clone.querySelectorAll('.fee-table-row > span:first-child, .terms-table-row > div:nth-child(odd)').forEach((cell) => {
