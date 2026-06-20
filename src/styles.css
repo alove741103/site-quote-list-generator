@@ -210,6 +210,8 @@ textarea {
   align-items: center !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  font-weight: 600 !important;
+  transform: translateY(-1px) !important;
 }
 
 .quote-export.pdf-capture-mode .fee-table-row > span,
@@ -219,6 +221,8 @@ textarea {
   align-items: center !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  font-weight: 600 !important;
+  transform: translateY(-1px) !important;
 }
 
 .quote-export .fee-table-row > span:first-child,

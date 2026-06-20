@@ -717,6 +717,7 @@ function createPdfCaptureNode(source) {
     cell.style.lineHeight = '1.38';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
+    cell.style.transform = 'translateY(-1px)';
   });
 
   clone.querySelectorAll('.fee-table-row > span, .terms-table-row > div, .quote-summary-row').forEach((cell) => {
@@ -725,6 +726,7 @@ function createPdfCaptureNode(source) {
     cell.style.minHeight = '34px';
     cell.style.paddingTop = '0';
     cell.style.paddingBottom = '0';
+    cell.style.transform = 'translateY(-1px)';
   });
 
   clone.querySelectorAll('.fee-table-row > span:first-child, .terms-table-row > div:nth-child(odd)').forEach((cell) => {
@@ -1115,7 +1117,7 @@ function App() {
       setStatus('正在產生 PDF...');
       captureNode = createPdfCaptureNode(preview);
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      const canvas = await html2canvas(captureNode, { scale: 5, backgroundColor: '#ffffff', useCORS: true });
+      const canvas = await html2canvas(captureNode, { scale: 6, backgroundColor: '#ffffff', useCORS: true });
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -1138,7 +1140,7 @@ function App() {
         PDF_IMPORT_END
       ];
       doc.text(importLines, 3, 3);
-      doc.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight, undefined, 'FAST');
+      doc.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight, undefined, 'NONE');
       doc.save(`場勘報價清單_${pending(form.company)}.pdf`);
       setStatus('已下載 PDF');
     } catch {
