@@ -291,11 +291,11 @@ function RichTextEditor({ editorId, value, onChange, onActivate, className }) {
 
 function AccordionSection({ title, description, open, onToggle, className = '', children }) {
   return (
-    <section className={`shrink-0 overflow-hidden rounded-md border border-[#dfe8d8] bg-white ${className}`}>
+    <section className={`kitty-accordion shrink-0 overflow-hidden rounded-md border border-[#dfe8d8] bg-white ${open ? 'is-open' : ''} ${className}`}>
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-3 bg-[#fbfdf8] px-4 py-3 text-left transition hover:bg-[#f4f9ef]"
+        className="kitty-accordion-button flex w-full items-center justify-between gap-3 bg-[#fbfdf8] px-4 py-3 text-left transition hover:bg-[#f4f9ef]"
         aria-expanded={open}
       >
         <span>
@@ -304,7 +304,7 @@ function AccordionSection({ title, description, open, onToggle, className = '', 
         </span>
         <ChevronDown className={`shrink-0 text-moss-700 transition-transform ${open ? 'rotate-180' : ''}`} size={20} />
       </button>
-      {open ? <div className="space-y-4 border-t border-[#dfe8d8] p-4">{children}</div> : null}
+      {open ? <div className="kitty-accordion-content space-y-4 border-t border-[#dfe8d8] p-4">{children}</div> : null}
     </section>
   );
 }
@@ -1232,10 +1232,10 @@ function App() {
   const quickColors = ['#d92626', '#f59e0b', '#2f7d32', '#2563eb', '#7c3aed', '#111827'];
 
   return (
-    <main className="min-h-screen bg-[#eef3ea] text-stone-900">
+    <main className="kitty-app min-h-screen bg-[#eef3ea] text-stone-900">
       <div className="mx-auto flex max-w-[1760px] flex-col gap-5 px-4 py-5 lg:h-screen lg:flex-row lg:overflow-hidden">
-        <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[#d9e2d2] bg-white shadow-soft">
-          <div className="border-b border-[#dbe4d5] bg-gradient-to-r from-white to-[#f4f8f0] px-5 py-4">
+        <section className="kitty-control-panel flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[#d9e2d2] bg-white shadow-soft">
+          <div className="kitty-hero border-b border-[#dbe4d5] bg-gradient-to-r from-white to-[#f4f8f0] px-5 py-4">
             <p className="text-xs font-bold uppercase text-moss-700">Professional site survey quotation</p>
             <h1 className="mt-1 text-2xl font-bold tracking-normal text-stone-950">場勘報價清單產生器</h1>
             <p className="mt-2 text-sm leading-6 text-stone-600">
@@ -1573,7 +1573,7 @@ function App() {
             </AccordionSection>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 border-t border-[#dbe4d5] bg-[#fbfdf8] px-5 py-4">
+          <div className="kitty-toolbar flex flex-wrap items-center gap-3 border-t border-[#dbe4d5] bg-[#fbfdf8] px-5 py-4">
             <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 ring-1 ring-[#dfe8d8]">
               <span className="text-xs font-bold text-stone-500">快速標色</span>
               {quickColors.map((color) => (
@@ -1608,7 +1608,7 @@ function App() {
               <p className="text-sm font-semibold opacity-90">正式估價單版型</p>
               <h2 className="text-2xl font-bold tracking-normal">估價單預覽</h2>
             </div>
-            <div className="flex gap-2">
+            <div className="kitty-preview-actions flex gap-2">
               <button title="建立空白估價單" onClick={resetCurrentCase} className="icon-button">
                 開新案件
               </button>
