@@ -144,7 +144,7 @@ function templateItemsToRows(template) {
   }));
 }
 
-const defaultCleaningType = '遷入清潔';
+const defaultCleaningType = '';
 const defaultSpecialNotes = buildStandardSpecialNotes();
 
 const defaultTerms = `1. 付款條件：待確認。
@@ -173,7 +173,7 @@ function dateOffsetString(days) {
 }
 
 const emptyForm = {
-  title: CLEANING_TEMPLATES[defaultCleaningType].title,
+  title: '清潔服務 估價單',
   cleaningType: defaultCleaningType,
   company: '',
   taxId: '',
