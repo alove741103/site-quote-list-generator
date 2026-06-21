@@ -1656,9 +1656,10 @@ function App() {
                   </div>
                 </div>
                 <aside className="border-t border-[#c6d9ba] bg-[#f4f8ef] px-4 py-5 text-center md:border-l md:border-t-0">
-                  <div className="mb-4 flex justify-center gap-2">
-                    <div className="qr-placeholder">LINE</div>
-                    <div className="qr-placeholder">IG</div>
+                  <div className="brand-qr-strip mb-4 flex justify-center gap-1.5">
+                    <img src="/assets/brand-qr-instagram.png" alt="Instagram QR" />
+                    <img src="/assets/brand-qr-line.png" alt="LINE QR" />
+                    <img src="/assets/brand-qr-facebook.png" alt="Facebook QR" />
                   </div>
                   <div className="mx-auto mb-3 grid h-20 w-20 place-items-center rounded-full border-2 border-[#4f7d35] bg-white text-4xl font-bold shadow-sm">葉</div>
                   <p className="text-xl font-bold tracking-normal text-moss-800">微笑清家</p>

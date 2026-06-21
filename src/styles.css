@@ -160,6 +160,14 @@ textarea {
   font-size: 9px;
 }
 
+.quote-export .brand-qr-strip img {
+  width: 40px;
+  height: 40px;
+  border-radius: 3px;
+  object-fit: contain;
+  background: #fff;
+}
+
 .quote-export .border-y {
   padding-top: 0.56rem !important;
   padding-bottom: 0.56rem !important;
