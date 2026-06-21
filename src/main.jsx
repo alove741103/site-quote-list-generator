@@ -144,12 +144,18 @@ function templateItemsToRows(template) {
   }));
 }
 
-const defaultCleaningType = '';
-const defaultSpecialNotes = '';
+const defaultCleaningType = '遷入清潔';
+const defaultSpecialNotes = buildStandardSpecialNotes();
 
-const defaultTerms = '';
+const defaultTerms = `1. 付款條件：待確認。
+2. 付款期限：施作完畢後付款，匯費勿內扣。
+3. 施作日期：待確認。
+驗收完畢完成驗收通過，視同完成通過驗收，事後無法要求再回現場進行二次清潔。`;
 
-const defaultPaymentNote = '';
+const defaultPaymentNote = `戶名：待確認
+銀行：待確認
+帳號：待確認
+匯款後請提供末五碼，以利對帳。`;
 
 const PAYMENT_CONDITIONS = ['匯款', '現金', '其他'];
 const PDF_IMPORT_START = 'SITE_QUOTE_IMPORT_START';
@@ -167,7 +173,7 @@ function dateOffsetString(days) {
 }
 
 const emptyForm = {
-  title: '',
+  title: CLEANING_TEMPLATES[defaultCleaningType].title,
   cleaningType: defaultCleaningType,
   company: '',
   taxId: '',
@@ -179,14 +185,14 @@ const emptyForm = {
   projectType: '',
   quoteDate: todayString(),
   validUntil: dateOffsetString(3),
-  serviceDate: '',
-  paymentCondition: '',
+  serviceDate: todayString(),
+  paymentCondition: '匯款',
   paymentConditionOther: '',
-  serviceFeeLabel: '',
+  serviceFeeLabel: '清潔費用 A',
   serviceSubtotal: '',
   serviceTax: '',
   serviceTotal: '',
-  cleaningFeeLabel: '',
+  cleaningFeeLabel: '清潔費用 B',
   cleaningSubtotal: '',
   cleaningTax: '',
   cleaningTotal: '',
@@ -203,7 +209,7 @@ function createEmptyForm() {
     ...emptyForm,
     quoteDate: todayString(),
     validUntil: dateOffsetString(3),
-    serviceDate: ''
+    serviceDate: todayString()
   };
 }
 
@@ -743,7 +749,7 @@ function App() {
   }
 
   function applyCleaningTemplate(cleaningType) {
-    if (cleaningType === form.cleaningType) return;
+    if (cleaningType === form.cleaningType && items.length > 0) return;
     if (!cleaningType) {
       setForm((current) => ({ ...current, cleaningType: '' }));
       return;
