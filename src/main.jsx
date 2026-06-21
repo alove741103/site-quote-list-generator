@@ -139,22 +139,16 @@ function buildStandardSpecialNotes() {
 function templateItemsToRows(template) {
   return DEFAULT_CATEGORY_CONFIG.map((category) => ({
     area: category.key,
-    detail: template?.items?.[category.key] || '待確認'
+    detail: template?.items?.[category.key] || ''
   }));
 }
 
-const defaultCleaningType = '遷入清潔';
-const defaultSpecialNotes = buildStandardSpecialNotes();
+const defaultCleaningType = '';
+const defaultSpecialNotes = '';
 
-const defaultTerms = `1. 付款條件：待確認。
-2. 付款期限：施作完畢後付款，匯費勿內扣。
-3. 施作日期：待確認。
-驗收完畢完成驗收通過，視同完成通過驗收，事後無法要求再回現場進行二次清潔。`;
+const defaultTerms = '';
 
-const defaultPaymentNote = `戶名：待確認
-銀行：待確認
-帳號：待確認
-匯款後請提供末五碼，以利對帳。`;
+const defaultPaymentNote = '';
 
 const PAYMENT_CONDITIONS = ['匯款', '現金', '其他'];
 const PDF_IMPORT_START = 'SITE_QUOTE_IMPORT_START';
@@ -172,7 +166,7 @@ function dateOffsetString(days) {
 }
 
 const emptyForm = {
-  title: CLEANING_TEMPLATES[defaultCleaningType].title,
+  title: '',
   cleaningType: defaultCleaningType,
   company: '',
   taxId: '',
@@ -184,14 +178,14 @@ const emptyForm = {
   projectType: '',
   quoteDate: todayString(),
   validUntil: dateOffsetString(3),
-  serviceDate: todayString(),
-  paymentCondition: '匯款',
+  serviceDate: '',
+  paymentCondition: '',
   paymentConditionOther: '',
-  serviceFeeLabel: '清潔費用 A',
+  serviceFeeLabel: '',
   serviceSubtotal: '',
   serviceTax: '',
   serviceTotal: '',
-  cleaningFeeLabel: '清潔費用 B',
+  cleaningFeeLabel: '',
   cleaningSubtotal: '',
   cleaningTax: '',
   cleaningTotal: '',
@@ -208,12 +202,12 @@ function createEmptyForm() {
     ...emptyForm,
     quoteDate: todayString(),
     validUntil: dateOffsetString(3),
-    serviceDate: todayString()
+    serviceDate: ''
   };
 }
 
 function pending(value) {
-  return value?.trim() || '待確認';
+  return value?.trim() || '';
 }
 
 function escapeHtml(value) {
@@ -390,12 +384,12 @@ function linesFromText(text) {
 }
 
 function money(value) {
-  return value?.trim() ? `NT$ ${value.trim()}` : '待確認';
+  return value?.trim() ? `NT$ ${value.trim()}` : '';
 }
 
 function formatRoomSummary(value) {
   const source = String(value || '').trim();
-  if (!source) return '待確認';
+  if (!source) return '';
   const slashMatch = source.match(/^(\d+)\s*[\/／]\s*(\d+)\s*[\/／]\s*(\d+)(?:\s*[\/／]\s*(\d+))?$/);
   if (slashMatch) {
     return `${slashMatch[1]}房${slashMatch[2]}廳${slashMatch[3]}衛${slashMatch[4] ? `${slashMatch[4]}陽台` : ''}`;
@@ -422,7 +416,7 @@ function feeAmount(total, subtotal, tax) {
 function totalFeeText(form) {
   const serviceAmount = feeAmount(form.serviceTotal, form.serviceSubtotal, form.serviceTax);
   const cleaningAmount = feeAmount(form.cleaningTotal, form.cleaningSubtotal, form.cleaningTax);
-  if (serviceAmount === null && cleaningAmount === null) return '待確認';
+  if (serviceAmount === null && cleaningAmount === null) return '';
   return `NT$ ${((serviceAmount || 0) + (cleaningAmount || 0)).toLocaleString('zh-TW')}`;
 }
 
@@ -515,15 +509,22 @@ function inferFormFields(text) {
 }
 
 function buildCategoryRows(items, categoryConfig = DEFAULT_CATEGORY_CONFIG) {
-  return categoryConfig.map((category, index) => {
-    const details = items.filter((item) => item.area === category.key).map((item) => item.detail || '待確認');
+  if (!items.length) return [];
+  const activeConfig = [...categoryConfig];
+  items.forEach((item) => {
+    if (!activeConfig.some((category) => category.key === item.area)) {
+      activeConfig.push({ key: item.area, label: item.area });
+    }
+  });
+  return activeConfig.map((category, index) => {
+    const details = items.filter((item) => item.area === category.key).map((item) => item.detail || '');
     return {
       number: index + 1,
-      area: category.label || '待確認',
+      area: category.label || '',
       key: category.key,
-      detail: details.length ? details.join('\n') : '待確認'
+      detail: details.length ? details.join('\n') : ''
     };
-  });
+  }).filter((row) => row.area || row.detail);
 }
 
 function buildPlainText(form, rows) {
@@ -703,8 +704,8 @@ function buildPrintHtml(form, rows) {
 
 function App() {
   const [form, setForm] = useState(createEmptyForm);
-  const [items, setItems] = useState(() => templateItemsToRows(CLEANING_TEMPLATES[emptyForm.cleaningType]));
-  const [categoryConfig, setCategoryConfig] = useState(DEFAULT_CATEGORY_CONFIG);
+  const [items, setItems] = useState([]);
+  const [categoryConfig, setCategoryConfig] = useState([]);
   const [status, setStatus] = useState('');
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [highlightColor, setHighlightColor] = useState('#d92626');
@@ -743,6 +744,10 @@ function App() {
 
   function applyCleaningTemplate(cleaningType) {
     if (cleaningType === form.cleaningType) return;
+    if (!cleaningType) {
+      setForm((current) => ({ ...current, cleaningType: '' }));
+      return;
+    }
     openConfirmDialog({
       title: '套用清潔範本',
       message: '套用範本會覆蓋目前施工項目，是否繼續？',
@@ -778,8 +783,8 @@ function App() {
 
   function resetCurrentCaseNow() {
     setForm(createEmptyForm());
-    setCategoryConfig(DEFAULT_CATEGORY_CONFIG);
-    setItems(templateItemsToRows(CLEANING_TEMPLATES[defaultCleaningType]));
+    setCategoryConfig([]);
+    setItems([]);
     setOpenSections({
       survey: true,
       customer: false,
@@ -810,7 +815,7 @@ function App() {
   function updateCategoryDetail(category, value) {
     setItems((current) => {
       const remaining = current.filter((item) => item.area !== category);
-      return [...remaining, { area: category, detail: value || '待確認' }];
+      return [...remaining, { area: category, detail: value || '' }];
     });
   }
 
@@ -820,8 +825,8 @@ function App() {
 
   function addCategoryRow() {
     const key = `custom-${Date.now()}`;
-    setCategoryConfig((current) => [...current, { key, label: '新增項目' }]);
-    setItems((current) => [...current, { area: key, detail: '待確認' }]);
+    setCategoryConfig((current) => [...current, { key, label: '' }]);
+    setItems((current) => [...current, { area: key, detail: '' }]);
     setOpenSections((current) => ({ ...current, items: true }));
   }
 
@@ -904,7 +909,7 @@ function App() {
   }
 
   function appendSupplementRows(rows) {
-    const validAreas = new Set(categoryConfig.map((category) => category.key));
+    const validAreas = new Set([...DEFAULT_CATEGORY_CONFIG, ...categoryConfig].map((category) => category.key));
     let addedCount = 0;
 
     setItems((current) => {
@@ -1249,7 +1254,7 @@ function App() {
                       value={form[field]}
                       onChange={(event) => updateField(field, event.target.value)}
                       className="h-11 w-full rounded-md border border-[#cfd8c8] bg-white px-3 text-[15px] outline-none transition placeholder:text-stone-400 focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
-                      placeholder="待確認"
+                      placeholder=""
                     />
                   </label>
                 ))}
@@ -1284,6 +1289,7 @@ function App() {
                     onChange={(event) => applyCleaningTemplate(event.target.value)}
                     className="h-13 w-full cursor-pointer appearance-none rounded-md border-2 border-moss-700 bg-white px-4 py-3 pr-11 text-[17px] font-black text-moss-800 shadow-inner outline-none transition hover:bg-[#fbfff8] focus:border-moss-800 focus:ring-4 focus:ring-moss-100"
                   >
+                    <option value="">請選擇清潔類型</option>
                     {CLEANING_TEMPLATE_OPTIONS.map((option) => (
                       <option key={option} value={option}>
                         {option}
@@ -1437,7 +1443,7 @@ function App() {
                 <div className="mb-3 flex items-center justify-between">
                   <div>
                     <h2 className="text-sm font-bold text-stone-800">費用資訊</h2>
-                    <p className="mt-1 text-xs text-stone-500">只輸入數字即可，預覽會自動顯示 NT$。不填則顯示待確認。</p>
+                    <p className="mt-1 text-xs text-stone-500">只輸入數字即可，預覽會自動顯示 NT$。不填則留白。</p>
                   </div>
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-moss-700 ring-1 ring-[#dfe8d8]">Optional</span>
                 </div>
@@ -1462,7 +1468,7 @@ function App() {
                               value={form[field]}
                               onChange={(event) => updateField(field, event.target.value)}
                               className="h-10 w-full rounded-md border border-[#cfd8c8] bg-white px-3 text-[14px] outline-none transition placeholder:text-stone-400 focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
-                              placeholder="待確認"
+                              placeholder=""
                             />
                           </label>
                         ))}
@@ -1479,7 +1485,7 @@ function App() {
                         value={form[field]}
                         onChange={(event) => updateField(field, event.target.value)}
                         className="h-10 w-full rounded-md border border-[#cfd8c8] bg-white px-3 text-[14px] outline-none transition placeholder:text-stone-400 focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
-                        placeholder="待確認"
+                        placeholder=""
                       />
                     </label>
                   ))}
@@ -1528,7 +1534,7 @@ function App() {
 
               <label className="block rounded-md border border-[#dfe8d8] bg-[#fbfdf8] p-3">
                 <span className="mb-1 block text-sm font-semibold text-stone-800">付款資訊</span>
-                <span className="mb-2 block text-xs text-stone-500">會顯示在估價單底部，價格仍維持待確認。</span>
+                <span className="mb-2 block text-xs text-stone-500">會顯示在估價單底部，價格未填則留白。</span>
                 <RichTextEditor
                   editorId="form:paymentNote"
                   value={form.paymentNote}
@@ -1733,12 +1739,12 @@ function App() {
                       <div className="border-r border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">付款條件</div>
                       <div className="px-3 py-3 text-red-600">{paymentConditionText(form)}</div>
                       <div className="border-r border-t border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">付款期限</div>
-                      <div className="border-t border-[#1e2d1b] px-3 py-3">施作完畢後付款，匯費勿內扣。</div>
+                      <div className="border-t border-[#1e2d1b] px-3 py-3"></div>
                       <div className="border-r border-t border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">施作日期</div>
                       <div className="border-t border-[#1e2d1b] px-3 py-3">{pending(form.serviceDate)}</div>
                     </div>
                     <div className="border-t border-[#1e2d1b] bg-[#f7f0c6] px-4 py-3 leading-7 text-moss-700">
-                      驗收完畢完成驗收通過（照片/影片或放棄驗收），視同「完成通過驗收」，事後無法要求再回現場進行二次清潔。
+                      <RichText text={pending(form.terms)} />
                     </div>
                     <div className="border-t border-[#1e2d1b] bg-white p-4">
                       <div className="grid gap-3 sm:grid-cols-2">
