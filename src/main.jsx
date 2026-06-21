@@ -203,6 +203,15 @@ const emptyForm = {
   rawText: ''
 };
 
+function createEmptyForm() {
+  return {
+    ...emptyForm,
+    quoteDate: todayString(),
+    validUntil: dateOffsetString(3),
+    serviceDate: todayString()
+  };
+}
+
 function pending(value) {
   return value?.trim() || '待確認';
 }
@@ -693,7 +702,7 @@ function buildPrintHtml(form, rows) {
 }
 
 function App() {
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(createEmptyForm);
   const [items, setItems] = useState(() => templateItemsToRows(CLEANING_TEMPLATES[emptyForm.cleaningType]));
   const [categoryConfig, setCategoryConfig] = useState(DEFAULT_CATEGORY_CONFIG);
   const [status, setStatus] = useState('');
@@ -701,6 +710,7 @@ function App() {
   const [highlightColor, setHighlightColor] = useState('#d92626');
   const [activeTextTarget, setActiveTextTarget] = useState(null);
   const [draggingCategoryKey, setDraggingCategoryKey] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState(null);
   const [openSections, setOpenSections] = useState({
     survey: true,
     customer: false,
@@ -717,7 +727,31 @@ function App() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function openConfirmDialog({ title, message, confirmText, onConfirm }) {
+    setConfirmDialog({ title, message, confirmText, onConfirm });
+  }
+
+  function closeConfirmDialog() {
+    setConfirmDialog(null);
+  }
+
+  function confirmAndClose() {
+    const action = confirmDialog?.onConfirm;
+    setConfirmDialog(null);
+    action?.();
+  }
+
   function applyCleaningTemplate(cleaningType) {
+    if (cleaningType === form.cleaningType) return;
+    openConfirmDialog({
+      title: '套用清潔範本',
+      message: '套用範本會覆蓋目前施工項目，是否繼續？',
+      confirmText: '繼續套用',
+      onConfirm: () => applyCleaningTemplateNow(cleaningType)
+    });
+  }
+
+  function applyCleaningTemplateNow(cleaningType) {
     const template = CLEANING_TEMPLATES[cleaningType];
     setForm((current) => ({
       ...current,
@@ -731,6 +765,31 @@ function App() {
       setOpenSections((current) => ({ ...current, items: true, notes: true }));
       setStatus(`已套用「${cleaningType}」標準清潔範本，內容仍可手動編輯`);
     }
+  }
+
+  function resetCurrentCase() {
+    openConfirmDialog({
+      title: '開新案件',
+      message: '開新案件會清空目前資料，並以空白估價單覆蓋舊內容，是否繼續？',
+      confirmText: '開新案件',
+      onConfirm: resetCurrentCaseNow
+    });
+  }
+
+  function resetCurrentCaseNow() {
+    setForm(createEmptyForm());
+    setCategoryConfig(DEFAULT_CATEGORY_CONFIG);
+    setItems(templateItemsToRows(CLEANING_TEMPLATES[defaultCleaningType]));
+    setOpenSections({
+      survey: true,
+      customer: false,
+      notes: false,
+      items: false,
+      payment: false
+    });
+    setActiveTextTarget(null);
+    setDraggingCategoryKey('');
+    setStatus('已建立空白估價單');
   }
 
   function applyInferredFormFields(text, extraFields = {}) {
@@ -878,7 +937,7 @@ function App() {
 
     const inferredCount = applyInferredFormFields(text);
     setIsOrganizing(true);
-    setStatus(mode === 'paste' ? '已偵測貼上內容，正在解析 LINE 補充...' : '正在解析 LINE 補充項目...');
+    setStatus(mode === 'paste' ? '已偵測貼上內容，正在解析補充內容...' : '正在解析補充內容...');
     try {
       const response = await fetch('/api/organize', {
         method: 'POST',
@@ -891,8 +950,8 @@ function App() {
       setOpenSections((current) => ({ ...current, items: true }));
       setStatus(
         addedCount
-          ? `已解析 LINE 補充：新增 ${addedCount} 個項目，並套入 ${inferredCount} 個客戶資料欄位`
-          : `已解析 LINE 補充，沒有新增重複項目；套入 ${inferredCount} 個客戶資料欄位`
+          ? `已解析補充內容：新增 ${addedCount} 個項目，並套入 ${inferredCount} 個客戶資料欄位`
+          : `已解析補充內容，沒有新增重複項目；套入 ${inferredCount} 個客戶資料欄位`
       );
     } catch {
       const addedCount = appendSupplementRows(localOrganize(text));
@@ -900,7 +959,7 @@ function App() {
       setStatus(
         addedCount
           ? `已用本機規則新增 ${addedCount} 個 LINE 補充項目，並套入 ${inferredCount} 個客戶資料欄位`
-          : `已解析 LINE 補充，沒有新增重複項目；若要提升準確度，請設定 OpenAI API Key`
+          : `已解析補充內容，沒有新增重複項目；若要提升準確度，請完成 API Key 設定`
       );
     } finally {
       setIsOrganizing(false);
@@ -1272,7 +1331,7 @@ function App() {
                     className="inline-flex h-11 items-center gap-2 rounded-md bg-moss-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-moss-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Sparkles size={18} />
-                    {isOrganizing ? '解析中' : '解析 LINE 補充'}
+                    {isOrganizing ? '解析中' : '解析補充內容'}
                   </button>
                   <span className="text-xs leading-5 text-stone-500">會依空間分類新增到「施工項目」，重複內容不會再次加入。</span>
                 </div>
@@ -1538,6 +1597,9 @@ function App() {
               <h2 className="text-2xl font-bold tracking-normal">估價單預覽</h2>
             </div>
             <div className="flex gap-2">
+              <button title="建立空白估價單" onClick={resetCurrentCase} className="icon-button">
+                開新案件
+              </button>
               <button title="複製結果" onClick={copyResult} className="icon-button">
                 複製
               </button>
@@ -1704,6 +1766,30 @@ function App() {
           </div>
         </section>
       </div>
+      {confirmDialog ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 px-4">
+          <div className="w-full max-w-md rounded-lg border border-[#c8d9bd] bg-white p-5 shadow-[0_24px_80px_rgba(28,45,24,0.28)]">
+            <h3 className="text-lg font-bold text-stone-950">{confirmDialog.title}</h3>
+            <p className="mt-3 text-sm leading-6 text-stone-600">{confirmDialog.message}</p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeConfirmDialog}
+                className="h-10 rounded-md border border-[#cfd8c8] bg-white px-4 text-sm font-bold text-moss-700 transition hover:bg-moss-50"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={confirmAndClose}
+                className="h-10 rounded-md bg-moss-700 px-4 text-sm font-bold text-white transition hover:bg-moss-800"
+              >
+                {confirmDialog.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
