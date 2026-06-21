@@ -30,221 +30,29 @@ textarea {
   scrollbar-color: #9ab78d #eef3ea;
 }
 
-.kitty-app {
-  position: relative;
-  overflow: hidden;
-  font-family:
-    "jf open 粉圓",
-    "GenSenRounded TW",
-    "Microsoft JhengHei",
-    "Noto Sans TC",
-    system-ui,
-    sans-serif;
-  background:
-    radial-gradient(circle at 8% 10%, rgb(255 162 190 / 0.24), transparent 28%),
-    radial-gradient(circle at 92% 6%, rgb(255 220 235 / 0.48), transparent 28%),
-    linear-gradient(135deg, #ffe8f1 0%, #fff7fb 42%, #fffaf0 100%) !important;
+.kitty-mini {
+  display: grid;
+  width: 72px;
+  height: 62px;
+  place-items: center;
+  border: 1px solid rgb(239 154 184 / 0.42);
+  border-radius: 22px;
+  background: rgb(255 246 250 / 0.72);
+  box-shadow: 0 12px 30px rgb(203 91 128 / 0.1);
+  color: #ca5f88;
 }
 
-.kitty-app::before,
-.kitty-app::after {
-  pointer-events: none;
-  position: fixed;
-  z-index: 0;
-  color: rgb(231 91 137 / 0.08);
+.kitty-bow {
+  margin-bottom: -12px;
+  margin-left: -22px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.kitty-face {
+  font-size: 18px;
   font-weight: 900;
-  letter-spacing: 18px;
-  white-space: pre;
-}
-
-.kitty-app::before {
-  content: "♡  ✦  🎀  ♡  ✧\A  🐾  ♡  ✦  🎀";
-  top: 28px;
-  left: 24px;
-  font-size: 30px;
-}
-
-.kitty-app::after {
-  right: 28px;
-  bottom: 36px;
-  content: "🎀  ✦  ♡  🐾";
-  font-size: 34px;
-}
-
-.kitty-app > div {
-  position: relative;
-  z-index: 1;
-}
-
-.kitty-control-panel {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgb(255 174 202 / 0.65) !important;
-  border-radius: 26px !important;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.9), rgb(255 244 249 / 0.92)) !important;
-  box-shadow: 0 24px 70px rgb(221 93 136 / 0.18) !important;
-}
-
-.kitty-control-panel::before {
-  pointer-events: none;
-  position: absolute;
-  top: 18px;
-  right: 24px;
-  z-index: 0;
-  content: "♡ ✦ 🎀";
-  color: rgb(232 93 142 / 0.09);
-  font-size: 54px;
-  font-weight: 900;
-}
-
-.kitty-control-panel > * {
-  position: relative;
-  z-index: 1;
-}
-
-.kitty-hero {
-  border-color: rgb(255 190 211 / 0.7) !important;
-  background:
-    linear-gradient(120deg, rgb(255 255 255 / 0.95), rgb(255 230 241 / 0.88)) !important;
-}
-
-.kitty-hero p:first-child {
-  color: #e05a91 !important;
-}
-
-.kitty-hero h1 {
-  color: #d94f89 !important;
-  text-shadow: 0 1px 0 rgb(255 255 255 / 0.9);
-}
-
-.kitty-control-panel :where(label, section):not(.quote-export *) {
-  border-radius: 18px !important;
-}
-
-.kitty-control-panel :where(input, textarea, select, [contenteditable="true"]):not(.quote-export *) {
-  border-color: #f6b8ce !important;
-  border-radius: 16px !important;
-  background: rgb(255 255 255 / 0.92) !important;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 8px 22px rgb(225 103 146 / 0.08);
-}
-
-.kitty-control-panel :where(input, textarea, select, [contenteditable="true"]):not(.quote-export *):focus {
-  border-color: #ee79a7 !important;
-  box-shadow: 0 0 0 4px rgb(255 166 200 / 0.24), 0 10px 26px rgb(225 103 146 / 0.12) !important;
-}
-
-.kitty-control-panel :where(.rounded-md, .rounded-lg):not(.quote-export *) {
-  border-radius: 18px;
-}
-
-.kitty-control-panel :where(.bg-moss-700):not(.quote-export *),
-.kitty-control-panel button:not(.icon-button):not([style]):not(.quote-export *) {
-  border-color: #f08ab4 !important;
-  background: linear-gradient(135deg, #ff8fbd, #ff6fa8) !important;
-  color: #fff !important;
-  box-shadow: 0 10px 22px rgb(231 91 137 / 0.22);
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    filter 180ms ease;
-}
-
-.kitty-control-panel button:not(.icon-button):not([style]):not(.quote-export *):hover {
-  filter: brightness(1.03);
-  transform: translateY(-2px) scale(1.015);
-  box-shadow: 0 14px 30px rgb(231 91 137 / 0.27);
-}
-
-.kitty-control-panel button[draggable="true"],
-.kitty-control-panel button[title^="刪除"],
-.kitty-control-panel div[draggable="true"] {
-  background: #fff !important;
-  color: #d94f89 !important;
-  box-shadow: 0 8px 18px rgb(231 91 137 / 0.12);
-}
-
-.kitty-accordion {
-  border-color: rgb(247 187 207 / 0.85) !important;
-  border-radius: 22px !important;
-  background: rgb(255 255 255 / 0.82) !important;
-  box-shadow: 0 12px 30px rgb(220 93 136 / 0.11);
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
-}
-
-.kitty-accordion:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 36px rgb(220 93 136 / 0.14);
-}
-
-.kitty-accordion.is-open {
-  border-color: rgb(239 126 166 / 0.95) !important;
-}
-
-.kitty-accordion-button {
-  background:
-    linear-gradient(90deg, rgb(255 249 252 / 0.98), rgb(255 232 242 / 0.84)) !important;
-}
-
-.kitty-accordion-button > span:first-child::before {
-  content: "♡";
-  display: inline-flex;
-  margin-right: 8px;
-  color: rgb(225 82 133 / 0.9);
-}
-
-.kitty-accordion-button span span:first-child {
-  color: #ca477f !important;
-}
-
-.kitty-accordion-button svg {
-  color: #e05a91 !important;
-}
-
-.kitty-accordion-content {
-  animation: kitty-soft-open 220ms ease both;
-  border-color: rgb(247 187 207 / 0.7) !important;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.72), rgb(255 247 250 / 0.8));
-}
-
-.kitty-toolbar {
-  border-color: rgb(247 187 207 / 0.7) !important;
-  background: rgb(255 247 251 / 0.88) !important;
-}
-
-.kitty-toolbar .rounded-full {
-  border: 1px solid rgb(247 187 207 / 0.75);
-  box-shadow: 0 10px 24px rgb(220 93 136 / 0.1);
-}
-
-.kitty-preview-actions .icon-button,
-.kitty-app .icon-button {
-  border-color: rgb(255 214 229 / 0.75);
-  border-radius: 14px;
-  background: rgb(255 255 255 / 0.16);
-  box-shadow: 0 10px 24px rgb(130 35 72 / 0.14);
-}
-
-.kitty-preview-actions .icon-button:hover,
-.kitty-app .icon-button:hover {
-  background: rgb(255 235 244 / 0.28);
-  transform: translateY(-2px) scale(1.02);
-}
-
-@keyframes kitty-soft-open {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  letter-spacing: 0.04em;
 }
 
 .icon-button {
