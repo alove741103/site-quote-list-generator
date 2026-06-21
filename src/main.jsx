@@ -1237,10 +1237,7 @@ function App() {
         <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[#d9e2d2] bg-white shadow-soft">
           <div className="relative overflow-hidden border-b border-[#dbe4d5] bg-gradient-to-r from-white to-[#f4f8f0] px-5 py-4">
             <div className="pointer-events-none absolute right-5 top-4 opacity-90" aria-hidden="true">
-              <div className="kitty-mini">
-                <span className="kitty-bow">🎀</span>
-                <span className="kitty-face">=^.^=</span>
-              </div>
+              <img className="kitty-mini" src="/assets/hello-kitty-accent.png" alt="" />
             </div>
             <div className="pr-24">
               <p className="text-xs font-bold uppercase text-moss-700">Professional site survey quotation</p>

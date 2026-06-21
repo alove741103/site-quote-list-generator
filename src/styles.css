@@ -31,28 +31,13 @@ textarea {
 }
 
 .kitty-mini {
-  display: grid;
-  width: 72px;
-  height: 62px;
-  place-items: center;
-  border: 1px solid rgb(239 154 184 / 0.42);
-  border-radius: 22px;
-  background: rgb(255 246 250 / 0.72);
-  box-shadow: 0 12px 30px rgb(203 91 128 / 0.1);
-  color: #ca5f88;
-}
-
-.kitty-bow {
-  margin-bottom: -12px;
-  margin-left: -22px;
-  font-size: 18px;
-  line-height: 1;
-}
-
-.kitty-face {
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: 0.04em;
+  display: block;
+  width: 84px;
+  height: 84px;
+  border-radius: 20px;
+  object-fit: contain;
+  opacity: 0.92;
+  filter: drop-shadow(0 10px 18px rgb(111 73 36 / 0.14));
 }
 
 .icon-button {
