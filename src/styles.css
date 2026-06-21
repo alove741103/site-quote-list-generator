@@ -87,6 +87,182 @@ textarea {
   font-size: 13px;
 }
 
+.payment-transfer-qr {
+  display: block;
+  width: 124px;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #b7cfa8;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgb(40 64 35 / 0.12);
+}
+
+.bank-cover-image {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  border: 1px solid #c8d8be;
+  border-radius: 4px;
+  object-fit: contain;
+  box-shadow: 0 2px 8px rgb(40 64 35 / 0.1);
+}
+
+.payment-info-panel {
+  background: linear-gradient(90deg, #fff 0%, #fbfdf7 100%);
+}
+
+.payment-bank-panel p {
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 2px;
+  text-align: left;
+}
+
+.payment-amount-strip {
+  border-top: 1px solid #1e2d1b !important;
+  border-bottom: 0 !important;
+  line-height: 1.2;
+  overflow: hidden;
+}
+
+.fee-installment-grid {
+  min-height: 32px;
+  border-bottom: 1px solid #1e2d1b;
+}
+
+.fee-total-line,
+.fee-installment-line {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+}
+
+.payment-qr-panel {
+  align-content: center;
+  gap: 4px;
+}
+
+.payment-qr-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #548436;
+  padding: 3px 9px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.payment-qr-hint {
+  color: #4f7d35;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.terms-summary-list {
+  display: grid;
+  gap: 5px;
+}
+
+.terms-summary-row {
+  display: grid;
+  grid-template-columns: 22px 82px minmax(0, 1fr);
+  align-items: center;
+  min-height: 30px;
+  border: 1px solid #c9d9bd;
+  background: rgb(255 255 255 / 0.55);
+  color: #315b2d;
+}
+
+.terms-summary-number {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  background: #dcebd3;
+  font-weight: 800;
+}
+
+.terms-summary-label {
+  padding: 0 5px;
+  font-weight: 800;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.terms-summary-value {
+  min-width: 0;
+  padding: 0 8px;
+  color: #d71920;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  white-space: nowrap;
+}
+
+.quote-terms-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.signature-section {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.signature-grid {
+  flex: 1;
+  height: 100%;
+}
+
+.signature-panel {
+  display: flex;
+  min-height: 122px;
+  flex-direction: column;
+}
+
+.signature-title {
+  margin-bottom: 7px;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.signature-title-quote {
+  background: #fff4d8;
+  color: #8a5b10;
+  box-shadow: inset 0 0 0 1px #e3c87c;
+}
+
+.signature-title-acceptance {
+  background: #e3f1da;
+  color: #315b2d;
+  box-shadow: inset 0 0 0 1px #9fbf8d;
+}
+
+.signature-box {
+  flex: 1;
+}
+
+.signature-box-quote {
+  background: #fffdf6 !important;
+  border-color: #caa85f !important;
+}
+
+.signature-box-acceptance {
+  background: #f7fbf3 !important;
+  border-color: #8ba87c !important;
+}
+
 .quote-export {
   width: 860px !important;
   max-width: none !important;
@@ -99,6 +275,20 @@ textarea {
 .quote-export,
 .quote-export * {
   line-height: 1.42 !important;
+}
+
+.quote-export :where(
+  h3,
+  h4,
+  p,
+  span,
+  .fee-total-line,
+  .fee-installment-line,
+  .terms-summary-row,
+  .signature-title,
+  .quote-footer
+) {
+  transform: translateY(-1.5px);
 }
 
 .quote-export .quote-header {
@@ -123,8 +313,12 @@ textarea {
 }
 
 .quote-export .quote-header .grid > div > div {
-  padding-top: 0.42rem !important;
-  padding-bottom: 0.42rem !important;
+  display: flex !important;
+  min-height: 28px !important;
+  align-items: center !important;
+  padding-top: 0.36rem !important;
+  padding-bottom: 0.36rem !important;
+  line-height: 1.2 !important;
 }
 
 .quote-export .quote-header .space-y-2 > :not([hidden]) ~ :not([hidden]) {
@@ -160,12 +354,29 @@ textarea {
   font-size: 9px;
 }
 
-.quote-export .brand-qr-strip img {
-  width: 40px;
-  height: 40px;
+.quote-export .brand-logo-mark {
+  display: block;
+  width: 88px !important;
+  height: 82px !important;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgb(29 58 34 / 0.12));
+}
+
+.quote-export .brand-qr-secondary img,
+.quote-export .brand-qr-primary img {
   border-radius: 3px;
   object-fit: contain;
   background: #fff;
+}
+
+.quote-export .brand-qr-secondary img {
+  width: 54px;
+  height: 54px;
+}
+
+.quote-export .brand-qr-primary img {
+  width: 96px;
+  height: 96px;
 }
 
 .quote-export .border-y {
@@ -174,22 +385,69 @@ textarea {
   font-size: 1.45rem !important;
 }
 
-.quote-export .quote-items-table td {
-  padding-top: 0.58rem !important;
-  padding-bottom: 0.58rem !important;
+.quote-items-grid {
+  display: grid;
+  background: #1e2d1b;
+  gap: 1px 0;
 }
 
-.quote-export .quote-items-table td:nth-child(1) {
-  width: 48px !important;
+.quote-item-row {
+  display: grid;
+  grid-template-columns: 54px 118px minmax(0, 1fr);
+  min-height: 36px;
+  background: #ffffff;
 }
 
-.quote-export .quote-items-table td:nth-child(2) {
-  width: 118px !important;
+.quote-item-row.is-highlighted {
+  background: #fffed0;
+}
+
+.quote-item-cell {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-start;
+  background: inherit;
+  line-height: 1.28;
+}
+
+.quote-item-no {
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  color: #57921f;
+  font-weight: 600;
+}
+
+.quote-item-area {
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  color: #496d34;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+}
+
+.quote-item-detail {
+  padding: 0.5rem 1rem;
+  color: #292524;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.quote-export .quote-item-row {
+  grid-template-columns: 48px 118px minmax(0, 1fr);
+  min-height: 34px;
+}
+
+.quote-export .quote-item-cell {
+  line-height: 1.18 !important;
+}
+
+.quote-export .quote-item-area {
   letter-spacing: 0.12em !important;
 }
 
 .quote-export .quote-bottom-grid {
-  grid-template-columns: 0.98fr 1.02fr !important;
+  grid-template-columns: 1.22fr 0.78fr !important;
 }
 
 .quote-export .quote-fee-column,
@@ -229,11 +487,15 @@ textarea {
 }
 
 .quote-export .quote-bottom-section .min-h-40 {
-  min-height: 7rem !important;
+  min-height: 8.25rem !important;
 }
 
 .quote-export .quote-bottom-section .min-h-32 {
-  min-height: 5.8rem !important;
+  min-height: 4.9rem !important;
+}
+
+.quote-export .quote-bottom-section .min-h-28 {
+  min-height: 4.7rem !important;
 }
 
 .quote-export .quote-bottom-section .min-h-24 {
@@ -241,7 +503,7 @@ textarea {
 }
 
 .quote-export .quote-bottom-section .grid-cols-\[1fr_150px\] {
-  grid-template-columns: 1fr 116px !important;
+  grid-template-columns: 1fr 142px !important;
 }
 
 .quote-export .qr-placeholder.large {
@@ -250,10 +512,894 @@ textarea {
   font-size: 11px;
 }
 
+.quote-export .payment-transfer-qr {
+  width: 112px;
+}
+
+.quote-export .bank-cover-image {
+  max-width: 390px;
+}
+
+.quote-export .payment-bank-panel {
+  padding: 0.55rem 0.7rem !important;
+}
+
+.quote-export .payment-qr-panel {
+  padding: 0.5rem !important;
+}
+
+.quote-export .fee-total-line {
+  min-height: 22px;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+  font-size: 13.5px !important;
+}
+
+.quote-export .fee-installment-grid {
+  min-height: 28px;
+  border-top: 0 !important;
+  border-bottom: 1px solid #1e2d1b !important;
+}
+
+.quote-export .fee-installment-line {
+  min-height: 24px;
+  border-bottom: 0 !important;
+  padding-top: 0.32rem !important;
+  padding-bottom: 0.32rem !important;
+  font-size: 13.5px !important;
+}
+
+.quote-export .terms-summary-list {
+  padding: 0.45rem !important;
+  gap: 4px;
+}
+
+.quote-export .terms-summary-row {
+  min-height: 27px;
+  grid-template-columns: 20px 76px minmax(0, 1fr);
+}
+
+.quote-export .terms-summary-label {
+  padding-left: 3px;
+  padding-right: 3px;
+  font-size: 11.6px;
+}
+
+.quote-export .terms-summary-value {
+  font-size: 11.5px;
+}
+
+.quote-export .signature-panel {
+  min-height: 176px;
+}
+
+.quote-export .signature-title {
+  margin-bottom: 0.42rem !important;
+  padding: 0.18rem 0.55rem !important;
+  font-size: 13px !important;
+}
+
+.quote-export .signature-box {
+  min-height: 140px !important;
+}
+
 .quote-export .quote-footer {
   padding-top: 0.58rem !important;
   padding-bottom: 0.58rem !important;
   line-height: 1.3 !important;
+}
+
+.quote-footer-section {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  background: #1e2d1b;
+  border: 1px solid #1e2d1b;
+  border-left: 0;
+  border-right: 0;
+  color: #25381f;
+  gap: 1px;
+}
+
+.qfs-head,
+.qfs-summary,
+.qfs-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #1e2d1b;
+  gap: 1px;
+}
+
+.qfs-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #dcebd3;
+  color: #3f6535;
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  min-height: 36px;
+}
+
+.qfs-fees,
+.qfs-terms,
+.qfs-payment,
+.qfs-signatures,
+.qfs-footer-note {
+  background: #f7fbf3;
+}
+
+.qfs-fees {
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+}
+
+.qfs-fee-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #1e2d1b;
+  gap: 1px;
+}
+
+.qfs-fee-card {
+  background: #f7fbf3;
+  padding: 12px;
+}
+
+.qfs-fee-name {
+  margin: 0 0 8px;
+  color: #d71920;
+  font-weight: 800;
+}
+
+.qfs-fee-table {
+  display: grid;
+  overflow: hidden;
+  background: #ffd2d2;
+  gap: 1px;
+  color: #d71920;
+  font-size: 13px;
+}
+
+.qfs-fee-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  min-height: 31px;
+}
+
+.qfs-fee-row span {
+  display: flex;
+  align-items: center;
+  background: rgb(255 255 255 / 0.76);
+  padding: 0 8px;
+  font-weight: 800;
+}
+
+.qfs-fee-row span:first-child {
+  background: #fff2f2;
+}
+
+.qfs-total {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  background: #fffed0;
+  color: #d71920;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.qfs-installments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #1e2d1b;
+  gap: 1px;
+}
+
+.qfs-installments div {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  background: #fffed0;
+  color: #d71920;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.qfs-terms {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: #f7fbf3;
+}
+
+.qfs-term-list {
+  display: grid;
+  background: #f8fbf3;
+  gap: 5px;
+  padding: 8px;
+}
+
+.qfs-term-row {
+  display: grid;
+  grid-template-columns: 22px 78px minmax(0, 1fr);
+  min-height: 27px;
+  background: #c9d9bd;
+  gap: 1px;
+  color: #315b2d;
+}
+
+.qfs-term-row span {
+  display: flex;
+  align-items: center;
+  background: rgb(255 255 255 / 0.7);
+  padding: 0 7px;
+  white-space: nowrap;
+}
+
+.qfs-term-row span:first-child {
+  justify-content: center;
+  background: #dcebd3;
+  font-weight: 900;
+  padding: 0;
+}
+
+.qfs-term-row span:nth-child(2) {
+  justify-content: center;
+  font-weight: 800;
+}
+
+.qfs-term-row span:last-child {
+  color: #d71920;
+  font-weight: 800;
+  overflow: hidden;
+}
+
+.qfs-term-note {
+  display: flex;
+  align-items: center;
+  background: #f7f0c6;
+  color: #4f6534;
+  padding: 10px 12px;
+  line-height: 1.55;
+}
+
+.qfs-main {
+  min-height: 238px;
+}
+
+.qfs-payment {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.qfs-section-label {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  background: #ffffff;
+  color: #3f6535;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.qfs-payment-content {
+  display: grid;
+  grid-template-columns: 1fr 142px;
+  background: #1e2d1b;
+  gap: 1px;
+}
+
+.qfs-bank-wrap,
+.qfs-transfer-wrap {
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.qfs-transfer-wrap {
+  align-content: center;
+  gap: 5px;
+  background: #f5f7f0;
+}
+
+.qfs-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #1e2d1b;
+  gap: 1px;
+}
+
+.qfs-signature-box {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #fbfdf8;
+  padding: 12px;
+}
+
+.qfs-signature-box::after {
+  content: "";
+  grid-row: 2;
+  border: 1px dashed #9ab389;
+  align-self: stretch;
+  justify-self: stretch;
+}
+
+.qfs-signature-quote {
+  background: #fffdf6;
+}
+
+.qfs-signature-acceptance {
+  background: #f7fbf3;
+}
+
+.qfs-signature-line {
+  display: flex;
+  grid-row: 3;
+  align-self: end;
+  justify-content: flex-end;
+  border-top: 1px solid #4f7d35;
+  color: #4f7d35;
+  padding-top: 8px;
+}
+
+.qfs-footer-note {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  background: #f4f8ef;
+  color: #4f6534;
+  font-size: 12px;
+}
+
+.quote-export .quote-footer-section {
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.quote-export .quote-footer-section :where(div, p, span) {
+  transform: none !important;
+}
+
+.quote-export .qfs-main {
+  min-height: 240px;
+}
+
+.quote-export .qfs-title {
+  min-height: 34px;
+  font-size: 1.04rem;
+}
+
+.quote-export .qfs-fee-card {
+  padding: 10px;
+}
+
+.quote-export .qfs-payment-content {
+  grid-template-columns: 1fr 142px;
+}
+
+.quote-export .qfs-bank-wrap,
+.quote-export .qfs-transfer-wrap,
+.quote-export .qfs-signature-box {
+  padding: 10px;
+}
+
+.quote-export .qfs-term-list {
+  padding: 7px;
+  gap: 4px;
+}
+
+.quote-export .qfs-term-row {
+  grid-template-columns: 20px 76px minmax(0, 1fr);
+  min-height: 26px;
+}
+
+.quote-export .qfs-term-row span {
+  font-size: 11.5px;
+  padding: 0 6px;
+}
+
+.quote-export .qfs-term-row span:first-child {
+  padding: 0;
+}
+
+.quote-export .qfs-footer-note {
+  min-height: 31px;
+}
+
+.quote-export .quote-bottom-section {
+  border-top: 1px solid #1e2d1b !important;
+}
+
+.quote-export .quote-bottom-grid {
+  grid-template-columns: 1.22fr 0.78fr !important;
+  background: #e8f3df !important;
+}
+
+.quote-export .quote-fee-column {
+  border-right: 1px solid #1e2d1b !important;
+  background: #f7fbf3 !important;
+}
+
+.quote-export .quote-terms-column {
+  background: #f7fbf3 !important;
+}
+
+.quote-export .payment-amount-strip {
+  border-top: 1px solid #1e2d1b !important;
+  border-bottom: 1px solid #1e2d1b !important;
+  background: #fffed0 !important;
+}
+
+.quote-export .fee-total-line {
+  border-bottom: 1px solid #1e2d1b !important;
+}
+
+.quote-export .fee-installment-grid {
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  background: #fffed0 !important;
+}
+
+.quote-export .fee-installment-line {
+  border-bottom: 0 !important;
+}
+
+.quote-export .fee-installment-line:first-child {
+  border-right: 1px solid #1e2d1b !important;
+}
+
+.quote-export .payment-info-panel {
+  background: #ffffff !important;
+}
+
+.quote-export .payment-qr-panel {
+  border-left: 1px solid #1e2d1b !important;
+  background: #f5f7f0 !important;
+}
+
+.quote-export .quote-terms-column > h4 {
+  border-bottom: 1px solid #1e2d1b !important;
+  background: #dcebd3 !important;
+}
+
+.quote-export .terms-summary-list {
+  border-bottom: 1px solid #1e2d1b !important;
+}
+
+.quote-export .quote-terms-column > .border-t.bg-\[\#f7f0c6\] {
+  border-top: 0 !important;
+  border-bottom: 1px solid #1e2d1b !important;
+}
+
+.quote-export .signature-section {
+  border-top: 0 !important;
+  background: #ffffff !important;
+}
+
+.quote-bottom-frame {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  border: 1px solid #1e2d1b;
+  border-left: 0;
+  border-right: 0;
+  background: #1e2d1b;
+  color: #25381f;
+  gap: 1px;
+}
+
+.qbf-head,
+.qbf-summary,
+.qbf-main {
+  display: grid;
+  grid-template-columns: 60fr 40fr;
+  background: #1e2d1b;
+  gap: 1px;
+}
+
+.qbf-title {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  background: #dcebd3;
+  color: #3f6535;
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.qbf-fees,
+.qbf-terms,
+.qbf-payment,
+.qbf-signatures,
+.qbf-footer-note {
+  background: #f7fbf3;
+}
+
+.qbf-fees {
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+}
+
+.qbf-fee-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #1e2d1b;
+  gap: 1px;
+}
+
+.qbf-fee-card {
+  background: #f7fbf3;
+  padding: 4px 8px;
+}
+
+.qbf-fee-name {
+  margin: 0 0 2px;
+  color: #d71920;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.qbf-fee-table {
+  display: grid;
+  overflow: hidden;
+  background: #ffd2d2;
+  color: #d71920;
+  font-size: 12px;
+  gap: 1px;
+}
+
+.qbf-fee-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  min-height: 18px;
+}
+
+.qbf-fee-row span {
+  display: flex;
+  align-items: center;
+  background: rgb(255 255 255 / 0.78);
+  padding: 0 8px;
+  font-weight: 800;
+}
+
+.qbf-fee-row span:first-child {
+  background: #fff2f2;
+}
+
+.qbf-total,
+.qbf-installments div {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  justify-content: center;
+  background: #fffed0;
+  color: #d71920;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.qbf-installments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #1e2d1b;
+  gap: 1px;
+}
+
+.qbf-terms {
+  display: grid;
+  grid-template-rows: 70% 30%;
+  align-content: stretch;
+}
+
+.qbf-term-list {
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  background: #f8fbf3;
+  align-content: start;
+  gap: 1px;
+  padding: 0;
+}
+
+.qbf-term-row {
+  display: grid;
+  grid-template-columns: 22px 78px minmax(0, 1fr);
+  min-height: 0;
+  background: #c9d9bd;
+  color: #315b2d;
+  gap: 1px;
+}
+
+.qbf-term-row span {
+  display: flex;
+  align-items: center;
+  background: #fbfdf8;
+  padding: 0 7px;
+  color: #203f1f;
+  font-size: 10.8px;
+  font-weight: 900;
+  line-height: 1.1;
+  text-rendering: geometricPrecision;
+  white-space: nowrap;
+}
+
+.qbf-term-row span:first-child {
+  justify-content: center;
+  background: #dcebd3;
+  font-weight: 900;
+  padding: 0;
+}
+
+.qbf-term-row span:nth-child(2) {
+  justify-content: center;
+  font-weight: 800;
+}
+
+.qbf-term-row span:last-child {
+  color: #d71920;
+  font-weight: 900;
+  overflow: hidden;
+}
+
+.qbf-term-note {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  justify-content: flex-start;
+  background: #f7f0c6;
+  color: #314f2b;
+  min-height: 0;
+  height: auto;
+  font-size: 11.8px;
+  font-weight: 800;
+  line-height: 1.28;
+  padding: 0 12px;
+  overflow: hidden;
+  white-space: pre-line;
+}
+
+.qbf-term-note p {
+  margin: 0;
+  padding: 0;
+}
+
+.qbf-main {
+  min-height: 315px;
+}
+
+.qbf-payment {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.qbf-section-label {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  background: #ffffff;
+  color: #3f6535;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.qbf-payment-reminder {
+  color: #6a7b5f;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.quote-export .qbf-payment-reminder {
+  font-size: 10.5px;
+}
+
+.qbf-payment-content {
+  display: grid;
+  grid-template-columns: minmax(350px, 1fr) 136px;
+  background: #1e2d1b;
+  gap: 1px;
+}
+
+.qbf-bank-wrap,
+.qbf-transfer-wrap {
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  padding: 10px 12px;
+}
+
+.qbf-bank-wrap .bank-cover-image {
+  width: 100%;
+  min-width: 350px;
+  max-width: 430px;
+}
+
+.qbf-transfer-wrap {
+  align-content: center;
+  background: #f5f7f0;
+  gap: 5px;
+}
+
+.qbf-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  background: #1e2d1b;
+  gap: 1px;
+}
+
+.qbf-signature-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: #fbfdf8;
+  padding: 10px 12px;
+  min-height: 100%;
+}
+
+.qbf-signature-quote {
+  background: #fffdf6;
+}
+
+.qbf-signature-acceptance {
+  background: #f7fbf3;
+}
+
+.qbf-signature-area {
+  display: grid;
+  align-items: end;
+  min-height: 248px;
+  border: 1px dashed #9ab389;
+  padding: 12px;
+}
+
+.qbf-signature-line {
+  border-top: 1px solid #4f7d35;
+  color: #4f7d35;
+  padding-top: 8px;
+  text-align: right;
+}
+
+.qbf-footer-note {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  background: #f4f8ef;
+  color: #4f6534;
+  font-size: 12px;
+}
+
+.quote-bottom-frame .cell-content,
+.quote-bottom-frame .preview-text,
+.quote-bottom-frame span,
+.quote-bottom-frame p,
+.quote-bottom-frame :where(
+  .qbf-title,
+  .qbf-total,
+  .qbf-installments > div,
+  .qbf-section-label,
+  .payment-qr-label,
+  .payment-qr-hint,
+  .signature-title,
+  .qbf-signature-line,
+  .qbf-footer-note
+) {
+  position: relative;
+  top: -3px;
+}
+
+.quote-export .quote-bottom-frame :where(div, p, span) {
+  line-height: 1.18 !important;
+  transform: none !important;
+}
+
+.quote-export .qbf-title,
+.quote-export .qbf-fee-name,
+.quote-export .qbf-total,
+.quote-export .qbf-installments > div,
+.quote-export .qbf-section-label,
+.quote-export .qbf-footer-note,
+.quote-export .payment-qr-label,
+.quote-export .payment-qr-hint,
+.quote-export .signature-title,
+.quote-export .qbf-signature-line {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.quote-export .qbf-title,
+.quote-export .qbf-total,
+.quote-export .qbf-installments > div,
+.quote-export .qbf-footer-note,
+.quote-export .payment-qr-label,
+.quote-export .payment-qr-hint,
+.quote-export .signature-title,
+.quote-export .qbf-signature-line {
+  justify-content: center !important;
+}
+
+.quote-export .qbf-section-label {
+  justify-content: flex-start !important;
+}
+
+.quote-export .qbf-signature-line {
+  justify-content: flex-end !important;
+}
+
+.quote-export .qbf-fee-row span,
+.quote-export .qbf-term-row span {
+  line-height: 1.12 !important;
+  min-height: 100%;
+  align-items: center !important;
+}
+
+.quote-export .qbf-title {
+  min-height: 34px;
+  font-size: 1.04rem;
+}
+
+.quote-export .qbf-main {
+  min-height: 315px;
+}
+
+.quote-export .qbf-payment-content {
+  grid-template-columns: minmax(350px, 1fr) 132px;
+}
+
+.quote-export .qbf-bank-wrap,
+.quote-export .qbf-transfer-wrap,
+.quote-export .qbf-signature-card {
+  padding: 9px 10px;
+}
+
+.quote-export .qbf-bank-wrap .bank-cover-image {
+  min-width: 350px;
+  max-width: 410px;
+}
+
+.quote-export .qbf-signature-area {
+  min-height: 252px;
+}
+
+.quote-export .qbf-transfer-wrap .payment-transfer-qr {
+  width: 112px;
+}
+
+.quote-export .qbf-term-list {
+  padding: 0;
+  gap: 1px;
+}
+
+.quote-export .qbf-term-row {
+  grid-template-columns: 20px 76px minmax(0, 1fr);
+  min-height: 0;
+}
+
+.quote-export .qbf-term-row span {
+  font-size: 10.6px;
+  padding: 0 6px;
+}
+
+.quote-export .qbf-term-row span:first-child {
+  padding: 0;
+}
+
+.quote-export .qbf-term-note {
+  height: auto;
+  padding: 0 12px;
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.22 !important;
+  align-content: center;
+}
+
+.quote-export .qbf-footer-note {
+  min-height: 30px;
 }
 
 @media print {

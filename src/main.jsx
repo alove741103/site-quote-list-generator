@@ -37,7 +37,6 @@ const STANDARD_NOTICE_ITEMS = [
 const STANDARD_OTHER_ITEMS = [
   '施作內容不包含窗簾、捲簾、百葉窗。',
   '廢棄物僅協助集中整理，不含清運。',
-  '無移位清潔。',
   '若現場狀況與場勘照片或影片不同，需加時或調整費用時將另行說明。',
   '如有疑問歡迎於Line商家提出。'
 ];
@@ -188,6 +187,7 @@ const emptyForm = {
   serviceDate: todayString(),
   paymentCondition: '匯款',
   paymentConditionOther: '',
+  paymentDeadline: '施作完畢後付款，匯費勿內扣。',
   serviceFeeLabel: '清潔費用 A',
   serviceSubtotal: '',
   serviceTax: '',
@@ -235,6 +235,11 @@ function richTextHtml(value) {
   return escaped
     .replace(/\[color=(#[0-9a-fA-F]{6})\]([\s\S]*?)\[\/color\]/g, '<span style="color:$1;font-weight:700;">$2</span>')
     .replace(/\n/g, '<br>');
+}
+
+function printItemRowHtml(row) {
+  const highlighted = Number(row.number) >= 8 ? 'highlight' : '';
+  return `<div class="print-item-row ${highlighted}"><div class="print-item-cell no">${row.number}</div><div class="print-item-cell area">${escapeHtml(row.area)}</div><div class="print-item-cell">${richTextHtml(row.detail)}</div></div>`;
 }
 
 function rgbToHex(value) {
@@ -431,6 +436,13 @@ function paymentConditionText(form) {
   return form.paymentCondition === '其他' ? pending(form.paymentConditionOther) : pending(form.paymentCondition);
 }
 
+function termsExtraText(form) {
+  const extraLines = linesFromText(form.terms).filter((line) => !/^\d+\s*[.．、]/.test(stripColorTags(line)));
+  return extraLines.length
+    ? extraLines.join('\n')
+    : '驗收完畢完成驗收通過，視同完成通過驗收，\n事後無法要求再回現場進行二次清潔。';
+}
+
 function pickField(text, patterns) {
   for (const pattern of patterns) {
     const match = text.match(pattern);
@@ -550,6 +562,7 @@ function buildPlainText(form, rows) {
     `型態：${pending(form.projectType)}`,
     `施作日期：${pending(form.serviceDate)}`,
     `付款條件：${paymentConditionText(form)}`,
+    `付款期限：${pending(form.paymentDeadline)}`,
     `${pending(form.serviceFeeLabel)} 小計：${money(form.serviceSubtotal)}`,
     `${pending(form.serviceFeeLabel)} 稅額：${money(form.serviceTax)}`,
     `${pending(form.serviceFeeLabel)} 總計含稅：${money(form.serviceTotal)}`,
@@ -632,11 +645,12 @@ function buildPrintHtml(form, rows) {
     .qr { width: 52px; height: 52px; border: 2px solid #8bb078; background: repeating-linear-gradient(45deg,#fff,#fff 5px,#dbead1 5px,#dbead1 10px); }
     .logo { width: 62px; height: 62px; border: 2px solid #4b7d35; border-radius: 50%; display: grid; place-items: center; margin: 6px auto; font-size: 30px; font-weight: 700; }
     .bar { background: #548436; color: white; text-align: center; font-size: 24px; letter-spacing: 4px; padding: 7px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    td { border-top: 1px solid #111; padding: 12px 14px; vertical-align: middle; white-space: pre-line; }
-    .no { width: 54px; color: #57921f; text-align: center; }
-    .area { width: 120px; color: #496d34; text-align: center; letter-spacing: 6px; }
-    .highlight td { background: #fffed0; }
+    .print-items-grid { display: grid; background: #111; gap: 1px 0; font-size: 13px; }
+    .print-item-row { display: grid; grid-template-columns: 54px 120px minmax(0, 1fr); min-height: 42px; background: #fff; }
+    .print-item-row.highlight { background: #fffed0; }
+    .print-item-cell { display: flex; min-width: 0; align-items: center; justify-content: flex-start; background: inherit; padding: 12px 14px; line-height: 1.28; white-space: pre-line; overflow-wrap: anywhere; }
+    .no { justify-content: center; color: #57921f; text-align: center; }
+    .area { justify-content: center; color: #496d34; text-align: center; letter-spacing: 6px; }
     .bottom { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #111; }
     .box { min-height: 170px; padding: 18px; border-right: 1px solid #111; }
     .box:last-child { border-right: 0; }
@@ -680,11 +694,11 @@ function buildPrintHtml(form, rows) {
       </div>
     </section>
     <div class="bar">${escapeHtml(formatRoomSummary(form.roomSummary))}　施 作 項 目</div>
-    <table><tbody>
+    <div class="print-items-grid">
       ${rows
-        .map((row) => `<tr class="${row.area === '注意事項' || row.area === '其他' ? 'highlight' : ''}"><td class="no">${row.number}</td><td class="area">${escapeHtml(row.area)}</td><td>${richTextHtml(row.detail)}</td></tr>`)
+        .map(printItemRowHtml)
         .join('')}
-    </tbody></table>
+    </div>
     <section class="bottom">
       <div class="box">
         <div class="fee-columns">
@@ -1095,6 +1109,7 @@ function App() {
       ['型態', pending(form.projectType)],
       ['施作日期', pending(form.serviceDate)],
       ['付款條件', paymentConditionText(form)],
+      ['付款期限', pending(form.paymentDeadline)],
       [`${pending(form.serviceFeeLabel)} 小計`, money(form.serviceSubtotal)],
       [`${pending(form.serviceFeeLabel)} 稅額`, money(form.serviceTax)],
       [`${pending(form.serviceFeeLabel)} 總計含稅`, money(form.serviceTotal)],
@@ -1185,7 +1200,6 @@ function App() {
     ['projectType', '型態'],
     ['quoteDate', '日期', 'date'],
     ['validUntil', '有效日期', 'date'],
-    ['serviceDate', '施作日期', 'date'],
     ['address', '地址']
   ];
 
@@ -1541,6 +1555,26 @@ function App() {
                     />
                   </label>
                 ) : null}
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label>
+                    <span className="mb-1 block text-xs font-bold text-stone-600">付款期限</span>
+                    <input
+                      value={form.paymentDeadline}
+                      onChange={(event) => updateField('paymentDeadline', event.target.value)}
+                      className="h-10 w-full rounded-md border border-[#cfd8c8] bg-white px-3 text-[14px] outline-none transition placeholder:text-stone-400 focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
+                      placeholder="施作完畢後付款，匯費勿內扣。"
+                    />
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-xs font-bold text-stone-600">施作日期</span>
+                    <input
+                      type="date"
+                      value={form.serviceDate}
+                      onChange={(event) => updateField('serviceDate', event.target.value)}
+                      className="h-10 w-full rounded-md border border-[#cfd8c8] bg-white px-3 text-[14px] outline-none transition placeholder:text-stone-400 focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
+                    />
+                  </label>
+                </div>
               </section>
 
               <label className="block rounded-md border border-[#dfe8d8] bg-[#fbfdf8] p-3">
@@ -1656,14 +1690,16 @@ function App() {
                   </div>
                 </div>
                 <aside className="border-t border-[#c6d9ba] bg-[#f4f8ef] px-4 py-5 text-center md:border-l md:border-t-0">
-                  <div className="brand-qr-strip mb-4 flex justify-center gap-1.5">
+                  <img className="brand-logo-mark mx-auto mb-2" src="/assets/brand-logo-mark.png" alt="微笑清家 Logo" />
+                  <p className="text-xl font-bold tracking-normal text-moss-800">微笑清家</p>
+                  <p className="mx-auto mb-3 max-w-[120px] break-all text-[10px] leading-4 text-moss-700">meant2clean.com</p>
+                  <div className="brand-qr-secondary mb-3 flex justify-center gap-2">
                     <img src="/assets/brand-qr-instagram.png" alt="Instagram QR" />
-                    <img src="/assets/brand-qr-line.png" alt="LINE QR" />
                     <img src="/assets/brand-qr-facebook.png" alt="Facebook QR" />
                   </div>
-                  <div className="mx-auto mb-3 grid h-20 w-20 place-items-center rounded-full border-2 border-[#4f7d35] bg-white text-4xl font-bold shadow-sm">葉</div>
-                  <p className="text-xl font-bold tracking-normal text-moss-800">微笑清家</p>
-                  <p className="mx-auto max-w-[120px] break-all text-[10px] leading-4 text-moss-700">meant2clean.com</p>
+                  <div className="brand-qr-primary flex justify-center">
+                    <img src="/assets/brand-qr-line.png" alt="LINE QR Code" />
+                  </div>
                 </aside>
               </section>
 
@@ -1671,114 +1707,113 @@ function App() {
                 {formatRoomSummary(form.roomSummary)}　施 作 項 目
               </div>
 
-              <table className="quote-items-table w-full border-collapse">
-                <colgroup>
-                  <col className="w-[54px]" />
-                  <col className="w-[118px]" />
-                  <col />
-                </colgroup>
-                <tbody>
+              <div className="quote-items-grid">
                   {categoryRows.map((row) => {
                     const highlighted = row.area === '注意事項' || row.area === '其他';
                     return (
-                      <tr key={row.area} className={highlighted ? 'bg-[#fffed0]' : 'bg-white'}>
-                        <td className="border-t border-[#1e2d1b] px-3 py-4 text-center align-middle font-semibold text-[#57921f]">{row.number}</td>
-                        <td className="border-t border-[#1e2d1b] px-3 py-4 text-center align-middle font-semibold tracking-[0.28em] text-[#496d34]">{row.area}</td>
-                        <td className="border-t border-[#1e2d1b] px-4 py-4 leading-7 whitespace-pre-line text-stone-800"><RichText text={row.detail} /></td>
-                      </tr>
+                      <div key={row.area} className={`quote-item-row ${highlighted ? 'is-highlighted' : ''}`}>
+                        <div className="quote-item-cell quote-item-no">{row.number}</div>
+                        <div className="quote-item-cell quote-item-area">{row.area}</div>
+                        <div className="quote-item-cell quote-item-detail"><RichText text={row.detail} /></div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+              </div>
 
-              <section className="quote-bottom-section border-t border-[#1e2d1b]">
-                <div className="quote-bottom-grid grid bg-[#e8f3df] md:grid-cols-[1fr_1fr]">
-                  <div className="quote-fee-column border-b border-[#1e2d1b] md:border-b-0 md:border-r">
-                    <div className="bg-[#dcebd3] px-4 py-2 text-center text-lg font-bold tracking-[0.12em] text-moss-700">費 用 摘 要</div>
-                    <div className="grid grid-cols-2 border-t border-[#1e2d1b]">
-                      <div className="border-r border-[#1e2d1b] p-4">
-                        <p className="mb-3 font-bold text-red-600">{pending(form.serviceFeeLabel)}</p>
-                        <div className="overflow-hidden rounded-sm border border-red-200 bg-white/60 text-sm text-red-600">
-                          {[
-                            ['小計', money(form.serviceSubtotal)],
-                            ['稅額', money(form.serviceTax)],
-                            ['總計含稅', money(form.serviceTotal)]
-                          ].map(([label, value]) => (
-                            <div key={label} className="grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
-                              <span className="bg-red-50 px-2 py-2 font-bold">{label}</span>
-                              <span className="min-w-0 break-words px-2 py-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
-                            </div>
-                          ))}
+              <section className="quote-bottom-frame">
+                <div className="qbf-head">
+                  <div className="qbf-title">費 用 摘 要</div>
+                  <div className="qbf-title">條 款 及 簽 核</div>
+                </div>
+                <div className="qbf-summary">
+                  <div className="qbf-fees">
+                    <div className="qbf-fee-cards">
+                      {[
+                        [pending(form.serviceFeeLabel), [
+                          ['小計', money(form.serviceSubtotal)],
+                          ['稅額', money(form.serviceTax)],
+                          ['總計含稅', money(form.serviceTotal)]
+                        ]],
+                        [pending(form.cleaningFeeLabel), [
+                          ['小計', money(form.cleaningSubtotal)],
+                          ['稅額', money(form.cleaningTax)],
+                          ['總計含稅', money(form.cleaningTotal)]
+                        ]]
+                      ].map(([title, rows]) => (
+                        <div key={title} className="qbf-fee-card">
+                          <p className="qbf-fee-name">{title}</p>
+                          <div className="qbf-fee-table">
+                            {rows.map(([label, value]) => (
+                              <div key={label} className="qbf-fee-row">
+                                <span>{label}</span>
+                                <span>{value}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div className="p-4">
-                        <p className="mb-3 font-bold text-red-600">{pending(form.cleaningFeeLabel)}</p>
-                        <div className="overflow-hidden rounded-sm border border-red-200 bg-white/60 text-sm text-red-600">
-                          {[
-                            ['小計', money(form.cleaningSubtotal)],
-                            ['稅額', money(form.cleaningTax)],
-                            ['總計含稅', money(form.cleaningTotal)]
-                          ].map(([label, value]) => (
-                            <div key={label} className="grid grid-cols-[72px_minmax(0,1fr)] border-b border-red-100 last:border-b-0">
-                              <span className="bg-red-50 px-2 py-2 font-bold">{label}</span>
-                              <span className="min-w-0 break-words px-2 py-2 font-semibold [overflow-wrap:anywhere]">{value}</span>
-                            </div>
-                          ))}
+                      ))}
+                    </div>
+                    <div className="qbf-total">總計費用：{totalFeeText(form)}</div>
+                    <div className="qbf-installments">
+                      <div>訂金匯款：{money(form.deposit)}</div>
+                      <div>尾款：{money(form.balance)}</div>
+                    </div>
+                  </div>
+                  <div className="qbf-terms">
+                    <div className="qbf-term-list">
+                      {[
+                        ['1', '付款條件', paymentConditionText(form)],
+                        ['2', '付款期限', pending(form.paymentDeadline)],
+                        ['3', '施作日期', pending(form.serviceDate)]
+                      ].map(([number, label, value]) => (
+                        <div key={label} className="qbf-term-row">
+                          <span>{number}</span>
+                          <span>{label}</span>
+                          <span>{value}</span>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                    <div className="border-y border-[#1e2d1b] bg-[#fffed0] text-red-600">
-                      <div className="border-b border-[#1e2d1b] px-4 py-2 text-center text-[16px] font-bold whitespace-nowrap">總計費用：{totalFeeText(form)}</div>
-                      <div className="grid grid-cols-2">
-                        <div className="min-w-0 border-r border-[#1e2d1b] px-4 py-3 text-[15px] font-bold whitespace-nowrap">訂金匯款：{money(form.deposit)}</div>
-                        <div className="min-w-0 px-4 py-3 text-[15px] font-bold whitespace-nowrap">尾款：{money(form.balance)}</div>
-                      </div>
+                    <div className="qbf-term-note">
+                      <p>驗收完畢完成驗收通過，視同完成通過驗收，</p>
+                      <p>事後無法要求再回現場進行二次清潔。</p>
                     </div>
-                    <div className="grid min-h-40 grid-cols-[1fr_150px] bg-white">
-                      <div className="p-4">
-                        <p className="font-bold text-moss-700">付款資訊</p>
-                        <div className="mt-3 leading-7 whitespace-pre-line text-stone-700"><RichText text={pending(form.paymentNote)} /></div>
+                  </div>
+                </div>
+                <div className="qbf-main">
+                  <div className="qbf-payment">
+                    <div className="qbf-section-label">
+                      <span>付款資訊</span>
+                      <span className="qbf-payment-reminder">匯款後請提供末五碼，以利對帳</span>
+                    </div>
+                    <div className="qbf-payment-content">
+                      <div className="qbf-bank-wrap">
+                        <img className="bank-cover-image" src="/assets/bank-cover.png" alt="付款帳戶資訊" />
                       </div>
-                      <div className="grid place-items-center border-l border-[#1e2d1b] bg-[#f5f7f0] p-4 text-center text-moss-700">
-                        <div className="qr-placeholder large">匯款 QR</div>
+                      <div className="qbf-transfer-wrap">
+                        <div className="payment-qr-label">掃碼付款</div>
+                        <img className="payment-transfer-qr" src="/assets/payment-transfer-qr.png" alt="匯款 QR Code" />
+                        <div className="payment-qr-hint">轉帳 QR</div>
                       </div>
                     </div>
                   </div>
-
-                  <div className="quote-terms-column bg-[#e8f3df]">
-                    <h4 className="border-b border-[#1e2d1b] bg-[#dcebd3] py-2 text-center text-lg font-bold tracking-[0.18em] text-moss-700">條 款 及 簽 核</h4>
-                    <div className="grid grid-cols-[112px_1fr] border-b border-[#1e2d1b]">
-                      <div className="border-r border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">付款條件</div>
-                      <div className="px-3 py-3 text-red-600">{paymentConditionText(form)}</div>
-                      <div className="border-r border-t border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">付款期限</div>
-                      <div className="border-t border-[#1e2d1b] px-3 py-3"></div>
-                      <div className="border-r border-t border-[#1e2d1b] px-3 py-3 text-center font-semibold text-moss-700">施作日期</div>
-                      <div className="border-t border-[#1e2d1b] px-3 py-3">{pending(form.serviceDate)}</div>
+                  <div className="qbf-signatures">
+                    <div className="qbf-signature-card qbf-signature-quote">
+                      <div className="signature-title signature-title-quote">接受報價簽名</div>
+                      <div className="qbf-signature-area">
+                        <div className="qbf-signature-line">簽名 / 日期</div>
+                      </div>
                     </div>
-                    <div className="border-t border-[#1e2d1b] bg-[#f7f0c6] px-4 py-3 leading-7 text-moss-700">
-                      <RichText text={pending(form.terms)} />
-                    </div>
-                    <div className="border-t border-[#1e2d1b] bg-white p-4">
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <div className="mb-2 text-base font-bold text-moss-700">接受報價簽名</div>
-                          <div className="grid min-h-28 place-items-end border border-dashed border-[#8ba87c] bg-[#fbfdf8] p-4">
-                            <div className="w-full border-t border-[#4f7d35] pt-2 text-right text-sm text-moss-700">簽名 / 日期</div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="mb-2 text-base font-bold text-moss-700">驗收簽名</div>
-                          <div className="grid min-h-28 place-items-end border border-dashed border-[#8ba87c] bg-[#fbfdf8] p-4">
-                            <div className="w-full border-t border-[#4f7d35] pt-2 text-right text-sm text-moss-700">簽名 / 日期</div>
-                          </div>
-                        </div>
+                    <div className="qbf-signature-card qbf-signature-acceptance">
+                      <div className="signature-title signature-title-acceptance">驗收簽名</div>
+                      <div className="qbf-signature-area">
+                        <div className="qbf-signature-line">簽名 / 日期</div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </section>
-              <section className="quote-footer border-t border-[#1e2d1b] bg-[#f4f8ef] px-5 py-3 text-center text-xs leading-6 text-moss-700">
-                本估價單內容依場勘紀錄與客戶提供資訊整理，實際施作範圍以雙方確認版本為準。
+                <div className="qbf-footer-note">
+                  本估價單內容依場勘紀錄與客戶提供資訊整理，實際施作範圍以雙方確認版本為準。
+                </div>
               </section>
             </article>
           </div>
