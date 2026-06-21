@@ -13,6 +13,7 @@ GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 const DEFAULT_CATEGORIES = ['牆面地面', '客廳玄關', '臥室', '廁所', '廚房', '陽台', '窗戶', '注意事項', '其他'];
 const CATEGORIES = DEFAULT_CATEGORIES;
 const DEFAULT_CATEGORY_CONFIG = DEFAULT_CATEGORIES.map((category) => ({ key: category, label: category }));
+const BLANK_CASE_CATEGORY_CONFIG = DEFAULT_CATEGORY_CONFIG.filter((category) => category.key !== '其他');
 const CLEANING_TEMPLATE_OPTIONS = ['裝潢細清', '遷入清潔', '遷出清潔', '居家清潔', '空屋清潔', '其他'];
 
 const categoryRules = [
@@ -509,7 +510,6 @@ function inferFormFields(text) {
 }
 
 function buildCategoryRows(items, categoryConfig = DEFAULT_CATEGORY_CONFIG) {
-  if (!items.length) return [];
   const activeConfig = [...categoryConfig];
   items.forEach((item) => {
     if (!activeConfig.some((category) => category.key === item.area)) {
@@ -705,7 +705,7 @@ function buildPrintHtml(form, rows) {
 function App() {
   const [form, setForm] = useState(createEmptyForm);
   const [items, setItems] = useState([]);
-  const [categoryConfig, setCategoryConfig] = useState([]);
+  const [categoryConfig, setCategoryConfig] = useState(BLANK_CASE_CATEGORY_CONFIG);
   const [status, setStatus] = useState('');
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [highlightColor, setHighlightColor] = useState('#d92626');
@@ -783,7 +783,7 @@ function App() {
 
   function resetCurrentCaseNow() {
     setForm(createEmptyForm());
-    setCategoryConfig([]);
+    setCategoryConfig(BLANK_CASE_CATEGORY_CONFIG);
     setItems([]);
     setOpenSections({
       survey: true,
