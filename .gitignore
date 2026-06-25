@@ -11,3 +11,6 @@ pnpm-debug.log*
 work/*.log
 work/
 outputs/
+output/
+tmp/
+vite-dev*.log

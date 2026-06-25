@@ -20,6 +20,11 @@ export default defineConfig(({ mode }) => {
   Object.assign(process.env, env);
 
   return {
+    server: {
+      watch: {
+        ignored: ['**/*.ttc', '**/*.ttf', '**/public/assets/**']
+      }
+    },
     plugins: [
       react(),
       {

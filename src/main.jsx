@@ -1,14 +1,146 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ChevronDown, GripVertical, Plus, Sparkles, X } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { Camera, ChevronDown, GripVertical, Plus, ShieldCheck, Sparkles, SprayCan, UsersRound, X } from 'lucide-react';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import * as XLSX from 'xlsx';
 import './styles.css';
+import { createNativeQuotePdf } from './nativePdf';
+import { quoteLayoutConfig } from './layoutConfig';
+import { themeConfig } from './themeConfig';
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+
+const constructionNoticePreviewConfig = quoteLayoutConfig.preview.constructionNotice;
+const headerPreviewConfig = quoteLayoutConfig.preview.header;
+const brandPreviewConfig = quoteLayoutConfig.preview.brand;
+const quotePreviewLayoutStyle = {
+  '--theme-primary': themeConfig.colors.primary,
+  '--theme-primary-dark': themeConfig.colors.primaryDark,
+  '--theme-primary-deep': themeConfig.colors.primaryDeep,
+  '--theme-primary-light': themeConfig.colors.primaryLight,
+  '--theme-primary-pale': themeConfig.colors.primaryPale,
+  '--theme-warning': themeConfig.colors.warning,
+  '--theme-warning-strong': themeConfig.colors.warningStrong,
+  '--theme-danger': themeConfig.colors.danger,
+  '--theme-danger-soft': themeConfig.colors.dangerSoft,
+  '--theme-text': themeConfig.colors.text,
+  '--theme-muted': themeConfig.colors.muted,
+  '--theme-border': themeConfig.colors.border,
+  '--theme-border-dark': themeConfig.colors.borderDark,
+  '--theme-quote-gold': themeConfig.colors.quoteGold,
+  '--theme-quote-gold-soft': themeConfig.colors.quoteGoldSoft,
+  '--theme-sage': themeConfig.colors.sage,
+  '--theme-sage-soft': themeConfig.colors.sageSoft,
+  '--quote-header-columns': quoteLayoutConfig.preview.headerColumns,
+  '--quote-header-section-padding-y': headerPreviewConfig.sectionPaddingY,
+  '--quote-header-section-padding-x': headerPreviewConfig.sectionPaddingX,
+  '--quote-header-notice-padding-x': headerPreviewConfig.noticePaddingX,
+  '--quote-header-quotation-font-size': `${headerPreviewConfig.quotationFontSize}px`,
+  '--quote-header-title-font-size': `${headerPreviewConfig.titleFontSize}px`,
+  '--quote-header-title-line-height': headerPreviewConfig.titleLineHeight,
+  '--quote-header-title-margin-bottom': headerPreviewConfig.titleMarginBottom,
+  '--quote-header-reminder-margin': headerPreviewConfig.reminderMargin,
+  '--quote-header-reminder-font-size': `${headerPreviewConfig.reminderFontSize}px`,
+  '--quote-header-reminder-line-height': headerPreviewConfig.reminderLineHeight,
+  '--quote-header-meta-font-size': `${headerPreviewConfig.metaFontSize}px`,
+  '--quote-header-meta-columns': headerPreviewConfig.metaColumns,
+  '--quote-header-meta-cell-min-height': `${headerPreviewConfig.metaCellMinHeight}px`,
+  '--quote-header-meta-cell-padding-y': headerPreviewConfig.metaCellPaddingY,
+  '--quote-header-meta-cell-padding-x': headerPreviewConfig.metaCellPaddingX,
+  '--quote-brand-logo-width': `${brandPreviewConfig.logoWidth}px`,
+  '--quote-brand-logo-height': `${brandPreviewConfig.logoHeight}px`,
+  '--quote-brand-name-font-size': `${brandPreviewConfig.nameFontSize}px`,
+  '--quote-brand-site-font-size': `${brandPreviewConfig.siteFontSize}px`,
+  '--quote-brand-site-line-height': `${brandPreviewConfig.siteLineHeight}px`,
+  '--quote-brand-site-max-width': `${brandPreviewConfig.siteMaxWidth}px`,
+  '--quote-brand-secondary-qr-size': `${brandPreviewConfig.secondaryQrSize}px`,
+  '--quote-brand-primary-qr-size': `${brandPreviewConfig.primaryQrSize}px`,
+  '--quote-brand-qr-gap': `${brandPreviewConfig.qrGap}px`,
+  '--quote-brand-secondary-margin-bottom': `${brandPreviewConfig.secondaryMarginBottom}px`,
+  '--construction-notice-title-font-size': `${constructionNoticePreviewConfig.titleFontSize}px`,
+  '--construction-notice-title-padding-bottom': `${constructionNoticePreviewConfig.titlePaddingBottom}px`,
+  '--construction-notice-list-gap': `${constructionNoticePreviewConfig.listGap}px`,
+  '--construction-notice-list-margin-top': `${constructionNoticePreviewConfig.listMarginTop}px`,
+  '--construction-notice-card-icon-column': `${constructionNoticePreviewConfig.cardIconColumn}px`,
+  '--construction-notice-card-min-height': `${constructionNoticePreviewConfig.cardMinHeight}px`,
+  '--construction-notice-copy-padding': constructionNoticePreviewConfig.cardCopyPadding,
+  '--construction-notice-heading-font-size': `${constructionNoticePreviewConfig.cardTitleFontSize}px`,
+  '--construction-notice-text-font-size': `${constructionNoticePreviewConfig.cardTextFontSize}px`,
+  '--construction-notice-text-line-height': constructionNoticePreviewConfig.cardTextLineHeight
+};
+const constructionItemsPreviewConfig = quoteLayoutConfig.preview.constructionItems;
+const quoteItemsLayoutStyle = {
+  '--quote-item-columns': constructionItemsPreviewConfig.columns,
+  '--quote-item-row-min-height': `${constructionItemsPreviewConfig.rowMinHeight}px`,
+  '--quote-item-cell-line-height': constructionItemsPreviewConfig.cellLineHeight,
+  '--quote-item-number-padding': constructionItemsPreviewConfig.numberPadding,
+  '--quote-item-area-padding': constructionItemsPreviewConfig.areaPadding,
+  '--quote-item-detail-padding': constructionItemsPreviewConfig.detailPadding,
+  '--quote-item-area-letter-spacing': constructionItemsPreviewConfig.areaLetterSpacing,
+  '--quote-item-detail-white-space': constructionItemsPreviewConfig.detailWhiteSpace,
+  '--quote-item-title-padding-y': `${constructionItemsPreviewConfig.titleBarPaddingY}rem`,
+  '--quote-item-title-font-size': `${constructionItemsPreviewConfig.titleBarFontSize}rem`
+};
+const feeSummaryPreviewConfig = quoteLayoutConfig.preview.feeSummary;
+const feeSummaryLayoutStyle = {
+  '--qbf-summary-columns': feeSummaryPreviewConfig.columns,
+  '--qbf-fee-grid-rows': feeSummaryPreviewConfig.feeGridRows,
+  '--qbf-fee-cards-columns': feeSummaryPreviewConfig.feeCardsColumns,
+  '--qbf-fee-card-padding': feeSummaryPreviewConfig.feeCardPadding,
+  '--qbf-fee-name-margin-bottom': `${feeSummaryPreviewConfig.feeNameMarginBottom}px`,
+  '--qbf-fee-name-font-size': `${feeSummaryPreviewConfig.feeNameFontSize}px`,
+  '--qbf-fee-table-font-size': `${feeSummaryPreviewConfig.feeTableFontSize}px`,
+  '--qbf-fee-table-gap': `${feeSummaryPreviewConfig.feeTableGap}px`,
+  '--qbf-fee-row-columns': feeSummaryPreviewConfig.feeRowColumns,
+  '--qbf-fee-row-min-height': `${feeSummaryPreviewConfig.feeRowMinHeight}px`,
+  '--qbf-fee-cell-padding-x': `${feeSummaryPreviewConfig.feeCellPaddingX}px`,
+  '--qbf-total-row-min-height': `${feeSummaryPreviewConfig.totalRowMinHeight}px`,
+  '--qbf-total-font-size': `${feeSummaryPreviewConfig.totalFontSize}px`,
+  '--qbf-total-gap': `${feeSummaryPreviewConfig.totalGap}px`,
+  '--qbf-total-letter-spacing': feeSummaryPreviewConfig.totalLetterSpacing,
+  '--qbf-total-badge-font-size': `${feeSummaryPreviewConfig.totalBadgeFontSize}px`,
+  '--qbf-total-badge-padding': feeSummaryPreviewConfig.totalBadgePadding,
+  '--qbf-total-badge-radius': `${feeSummaryPreviewConfig.totalBadgeRadius}px`,
+  '--qbf-installment-columns': feeSummaryPreviewConfig.installmentColumns,
+  '--qbf-installment-row-min-height': `${feeSummaryPreviewConfig.installmentRowMinHeight}px`,
+  '--qbf-installment-font-size': `${feeSummaryPreviewConfig.installmentFontSize}px`,
+  '--qbf-fee-red': feeSummaryPreviewConfig.red,
+  '--qbf-total-red': feeSummaryPreviewConfig.totalRed,
+  '--qbf-fee-line-height': feeSummaryPreviewConfig.lineHeight
+};
+const termsSignaturePreviewConfig = quoteLayoutConfig.preview.termsSignature;
+const termsSignatureLayoutStyle = {
+  '--qbf-terms-grid-rows': termsSignaturePreviewConfig.termsGridRows,
+  '--qbf-term-list-rows': termsSignaturePreviewConfig.termListRows,
+  '--qbf-term-row-columns': termsSignaturePreviewConfig.termRowColumns,
+  '--qbf-term-row-gap': `${termsSignaturePreviewConfig.termRowGap}px`,
+  '--qbf-term-cell-padding-x': `${termsSignaturePreviewConfig.termCellPaddingX}px`,
+  '--qbf-term-cell-font-size': `${termsSignaturePreviewConfig.termCellFontSize}px`,
+  '--qbf-term-cell-line-height': termsSignaturePreviewConfig.termCellLineHeight,
+  '--qbf-term-note-gap': `${termsSignaturePreviewConfig.termNoteGap}px`,
+  '--qbf-term-note-font-size': `${termsSignaturePreviewConfig.termNoteFontSize}px`,
+  '--qbf-term-note-line-height': termsSignaturePreviewConfig.termNoteLineHeight,
+  '--qbf-term-note-padding': termsSignaturePreviewConfig.termNotePadding,
+  '--qbf-main-min-height': `${termsSignaturePreviewConfig.mainMinHeight}px`,
+  '--qbf-signature-columns': termsSignaturePreviewConfig.signatureColumns,
+  '--qbf-signature-card-padding': termsSignaturePreviewConfig.signatureCardPadding,
+  '--qbf-signature-area-min-height': `${termsSignaturePreviewConfig.signatureAreaMinHeight}px`,
+  '--qbf-signature-area-padding': `${termsSignaturePreviewConfig.signatureAreaPadding}px`,
+  '--qbf-signature-line-padding-top': `${termsSignaturePreviewConfig.signatureLinePaddingTop}px`,
+  '--qbf-export-term-row-columns': termsSignaturePreviewConfig.exportTermRowColumns,
+  '--qbf-export-term-cell-font-size': `${termsSignaturePreviewConfig.exportTermCellFontSize}px`,
+  '--qbf-export-term-cell-padding-x': `${termsSignaturePreviewConfig.exportTermCellPaddingX}px`,
+  '--qbf-export-term-note-padding': termsSignaturePreviewConfig.exportTermNotePadding,
+  '--qbf-export-term-note-font-size': `${termsSignaturePreviewConfig.exportTermNoteFontSize}px`,
+  '--qbf-export-term-note-line-height': termsSignaturePreviewConfig.exportTermNoteLineHeight,
+  '--qbf-export-signature-card-padding': termsSignaturePreviewConfig.exportSignatureCardPadding,
+  '--qbf-export-signature-area-min-height': `${termsSignaturePreviewConfig.exportSignatureAreaMinHeight}px`
+};
+const bottomSummaryLayoutStyle = {
+  ...feeSummaryLayoutStyle,
+  ...termsSignatureLayoutStyle
+};
 
 const DEFAULT_CATEGORIES = ['牆面地面', '客廳玄關', '臥室', '廁所', '廚房', '陽台', '窗戶', '注意事項', '其他'];
 const CATEGORIES = DEFAULT_CATEGORIES;
@@ -41,19 +173,37 @@ const STANDARD_OTHER_ITEMS = [
   '如有疑問歡迎於Line商家提出。'
 ];
 
+const TEMPLATE_NOTICE_DETAIL = `*廁所乾濕分離門如有發霉、髒污及水垢皂垢管家都會盡量清潔，但可能無法100%去除還原。
+*石材檯面材質，水中的鈣、鎂礦物質會在水蒸發後沉澱在石材表面形成水垢，部分表面會有這個情形，
+  無法保證100%去除還原。
+*廚房重度油垢如已經結成油塊、瓦斯爐架如已經生鏽、有燒焦痕跡、可能無法100%去除還原。
+*大理石為特殊石材，如需拋光需尋求專業廠商`;
+
+const TEMPLATE_OTHER_DETAIL = `*廢棄物: 管家僅協助整理集中，屋主需自備垃圾袋及自行清運。
+*燈具、玻璃有使用年限，容易老舊脆化造成。僅以灰塵撢除塵方式進行。
+*如物品老舊或是已不堪使用，可能導致破損或損壞，清潔前請先行知會。
+*另天然因素損壞如：油漆、磁磚、水泥、水管、燈飾...等，因熱脹冷縮或自然災害而導致龜裂、剝落之情形，
+  或金屬因潮濕或使用年限久遠而生鏽斷裂...等，如業主堅持清潔，微笑清家恕不賠償。`;
+
 const CLEANING_TEMPLATES = {
   裝潢細清: {
     title: '裝潢細清 估價單',
     items: {
-      牆面地面: '全室地板粉塵清潔、踢腳板擦拭、地面細部掃拖清潔。',
-      客廳玄關: '大門、門框、開關面板、插座、玄關櫃與客廳裝潢表面粉塵擦拭。',
-      臥室: '門片、門框、櫃體內外、層板、窗台及家具表面粉塵擦拭。',
-      廁所: '廁所天花板、牆面、洗手台、乾濕分離玻璃、馬桶、鏡子、抽風機排風口與五金水垢清潔。',
-      廚房: '廚房櫃體內外、牆面、檯面、流理台、爐具外觀與抽油煙機外觀粉塵油污清潔。',
-      陽台: '陽台地板、牆面、欄杆、排水孔與曬衣桿擦拭清潔。',
-      窗戶: '玻璃、窗框、窗溝、紗窗粉塵清潔。',
-      注意事項: '裝潢殘膠、油漆點、矽利康殘留依現況盡量處理，特殊刮除另行確認。',
-      其他: '施工粉塵較重區域會優先加強，實際清潔範圍依現場確認。'
+      牆面地面: '全室地板掃拖清潔，全室牆面除塵。',
+      客廳玄關: '全室門片門框擦拭、全室牆面除塵、全室櫃體內外.平面.桌面擦拭(需協助撕保護膜)',
+      臥室: '臥室門片、門框、櫃體內外、層板、平面、桌面擦拭(需協助撕保護膜)。',
+      廁所: `廁所天花板、牆面、洗手台、乾溼分離玻璃、浴缸、馬桶、鏡子(鏡面及請小心處理)、抽風機排風口清潔。
+需協助撕保護膜、除粉塵`,
+      廚房: '廚房櫃體內外擦拭、牆面、烤漆玻璃、檯面、流理台、烘碗機、瓦斯爐、抽油煙機清潔、需除塵。',
+      陽台: '陽台地板、牆面可及處、欄杆、排水孔與曬衣桿清潔。',
+      窗戶: `全室玻璃、窗框、窗溝、紗窗清潔。
+(外窗管家以工具輔助會盡量清潔，無法100%無水痕殘留，如遇直角式窗戶無開窗縫，則以內窗、窗框溝施作為主)
+*安全考量: 窗戶會視情況是否拆窗施作，多數大樓窗戶比載重，如拆下有危險性，則以不拆窗施作。
+*如有窗戶紗窗為摺紗，因摺紗脆弱易損壞，故管家僅能以除塵撢除去灰塵，可能無法100%乾淨。
+*施作地點為高危險之處(如外窗、陽台、邊雨棚...)，或是無立足點、欄杆低於腰部...等部分，
+  不在服務範圍內，管家請勿以輔助工具施作`,
+      注意事項: TEMPLATE_NOTICE_DETAIL,
+      其他: TEMPLATE_OTHER_DETAIL
     }
   },
   遷入清潔: {
@@ -66,8 +216,8 @@ const CLEANING_TEMPLATES = {
       廚房: '廚房櫃體內外擦拭、牆面、檯面、流理台、烘碗機、爐具外觀清潔。',
       陽台: '陽台地板掃拖清潔。',
       窗戶: '玻璃、窗框、窗溝、紗窗清潔。',
-      注意事項: '入住前清潔以可使用狀態為目標，重度汙垢或舊有痕跡依現場狀況盡量處理。',
-      其他: '施作範圍依場勘內容與雙方確認版本為準。'
+      注意事項: TEMPLATE_NOTICE_DETAIL,
+      其他: TEMPLATE_OTHER_DETAIL
     }
   },
   遷出清潔: {
@@ -80,8 +230,8 @@ const CLEANING_TEMPLATES = {
       廚房: '廚房櫃體內外、牆面、檯面、流理台、爐具外觀與抽油煙機外觀油污清潔。',
       陽台: '陽台地板、欄杆、排水孔、洗衣機周邊可及處掃拖清潔。',
       窗戶: '玻璃、窗框、窗溝、紗窗清潔。',
-      注意事項: '遷出清潔不含垃圾清運與大型家具移位，現場遺留物需先集中。',
-      其他: '若需房東驗收前加強區域，可於施作前提出確認。'
+      注意事項: TEMPLATE_NOTICE_DETAIL,
+      其他: TEMPLATE_OTHER_DETAIL
     }
   },
   居家清潔: {
@@ -94,8 +244,8 @@ const CLEANING_TEMPLATES = {
       廚房: '檯面、流理台、爐具外觀、櫃體外觀、牆面局部油污與地面清潔。',
       陽台: '陽台地板掃拖、欄杆與洗衣機周邊可及處擦拭。',
       窗戶: '窗台、窗框可及處與玻璃局部擦拭。',
-      注意事項: '居家清潔以日常維護為主，重度油垢、水垢或櫃體內部需另行確認。',
-      其他: '貴重物品、私人文件與易碎物品請先收妥。'
+      注意事項: TEMPLATE_NOTICE_DETAIL,
+      其他: TEMPLATE_OTHER_DETAIL
     }
   },
   空屋清潔: {
@@ -108,8 +258,8 @@ const CLEANING_TEMPLATES = {
       廚房: '廚房櫃體內外、流理台、檯面、牆面、爐具外觀、烘碗機與地面清潔。',
       陽台: '陽台地板、牆面可及處、欄杆、排水孔與曬衣桿清潔。',
       窗戶: '全室玻璃、窗框、窗溝、紗窗清潔。',
-      注意事項: '空屋清潔不含裝潢殘膠大面積刮除、油漆工程或大型廢棄物清運。',
-      其他: '若現場仍有物品，需先確認是否可移動或避開施作。'
+      注意事項: TEMPLATE_NOTICE_DETAIL,
+      其他: TEMPLATE_OTHER_DETAIL
     }
   },
   其他: {
@@ -122,8 +272,8 @@ const CLEANING_TEMPLATES = {
       廚房: '依現場需求確認廚房櫃體、檯面、流理台、爐具與牆面清潔範圍。',
       陽台: '依現場需求確認陽台地板、欄杆、排水孔與可及處清潔範圍。',
       窗戶: '依現場需求確認玻璃、窗框、窗溝與紗窗清潔範圍。',
-      注意事項: '特殊材質、重度汙垢、施工限制與加價項目需另行確認。',
-      其他: '其他未列項目依雙方確認內容辦理。'
+      注意事項: TEMPLATE_NOTICE_DETAIL,
+      其他: TEMPLATE_OTHER_DETAIL
     }
   }
 };
@@ -145,6 +295,14 @@ function templateItemsToRows(template) {
 
 const defaultCleaningType = '';
 const defaultSpecialNotes = buildStandardSpecialNotes();
+const defaultConstructionNotes = `• 本估價單為含耗材與清潔工具之專業報價。
+• 裝潢細清為團隊合作工程，所有管家同進同出，
+確保施工品質與驗收一致性。
+• 施作後屋主可現場驗收
+若有遺漏可立即補強處理。
+• [color=#d71920]若施作當日現場狀況與場勘或業主提供的[/color]
+[color=#d71920]照片/影片不同，若需加時或調整費用，[/color]
+[color=#d71920]將於當日與屋主說明並確認後再行處理。[/color]`;
 
 const defaultTerms = `1. 付款條件：待確認。
 2. 付款期限：施作完畢後付款，匯費勿內扣。
@@ -180,11 +338,12 @@ const emptyForm = {
   phone: '',
   building: '',
   address: '',
+  constructionNotes: defaultConstructionNotes,
   roomSummary: '',
   projectType: '',
   quoteDate: todayString(),
   validUntil: dateOffsetString(3),
-  serviceDate: todayString(),
+  serviceDate: '待訂',
   paymentCondition: '匯款',
   paymentConditionOther: '',
   paymentDeadline: '施作完畢後付款，匯費勿內扣。',
@@ -209,7 +368,7 @@ function createEmptyForm() {
     ...emptyForm,
     quoteDate: todayString(),
     validUntil: dateOffsetString(3),
-    serviceDate: todayString()
+    serviceDate: '待訂'
   };
 }
 
@@ -289,7 +448,6 @@ function RichTextEditor({ editorId, value, onChange, onActivate, className }) {
       onKeyUp={() => onActivate(editorId, ref.current)}
       onInput={(event) => onChange(htmlToRichText(event.currentTarget.innerHTML))}
       className={className}
-      dangerouslySetInnerHTML={{ __html: richTextHtml(value) }}
     />
   );
 }
@@ -395,6 +553,25 @@ function linesFromText(text) {
     .filter(Boolean);
 }
 
+function constructionNoticeCards(text) {
+  const titles = ['專業報價', '團隊進場', '現場驗收', '現況差異'];
+  const cards = [];
+
+  linesFromText(text).forEach((line) => {
+    const bulletMatch = line.match(/^[•*－-]\s*(.*)$/);
+    if (bulletMatch || !cards.length) {
+      cards.push({
+        title: titles[cards.length] || '施工須知',
+        text: bulletMatch ? bulletMatch[1] : line
+      });
+      return;
+    }
+    cards[cards.length - 1].text = `${cards[cards.length - 1].text}\n${line}`;
+  });
+
+  return cards;
+}
+
 function money(value) {
   return value?.trim() ? `NT$ ${value.trim()}` : '';
 }
@@ -416,6 +593,12 @@ function moneyNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function amountText(value) {
+  if (value === null || value === undefined || value === '') return '';
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? String(Math.round(parsed)) : '';
+}
+
 function feeAmount(total, subtotal, tax) {
   const totalValue = moneyNumber(total);
   if (totalValue !== null) return totalValue;
@@ -426,10 +609,57 @@ function feeAmount(total, subtotal, tax) {
 }
 
 function totalFeeText(form) {
+  const chineseAmount = totalFeeChineseText(form);
+  return chineseAmount ? `${chineseAmount}【含稅】` : '';
+}
+
+function totalFeeChineseText(form) {
   const serviceAmount = feeAmount(form.serviceTotal, form.serviceSubtotal, form.serviceTax);
   const cleaningAmount = feeAmount(form.cleaningTotal, form.cleaningSubtotal, form.cleaningTax);
   if (serviceAmount === null && cleaningAmount === null) return '';
-  return `NT$ ${((serviceAmount || 0) + (cleaningAmount || 0)).toLocaleString('zh-TW')}`;
+  return numberToChineseCurrency((serviceAmount || 0) + (cleaningAmount || 0));
+}
+
+function numberToChineseCurrency(value) {
+  const amount = Math.round(Number(value) || 0);
+  if (!amount) return '零元整';
+  const digits = ['零', '壹', '貳', '參', '肆', '伍', '陸', '柒', '捌', '玖'];
+  const units = ['', '拾', '佰', '仟'];
+  const sections = ['', '萬', '億', '兆'];
+  const convertSection = (section) => {
+    let result = '';
+    let zeroPending = false;
+    String(section).padStart(4, '0').split('').map(Number).forEach((digit, index) => {
+      const unitIndex = 3 - index;
+      if (digit === 0) {
+        if (result) zeroPending = true;
+        return;
+      }
+      if (zeroPending) {
+        result += digits[0];
+        zeroPending = false;
+      }
+      result += `${digits[digit]}${units[unitIndex]}`;
+    });
+    return result;
+  };
+  let result = '';
+  let remaining = amount;
+  let sectionIndex = 0;
+  let needZero = false;
+  while (remaining > 0) {
+    const section = remaining % 10000;
+    if (section) {
+      const sectionText = `${convertSection(section)}${sections[sectionIndex]}`;
+      result = needZero && result ? `${sectionText}零${result}` : `${sectionText}${result}`;
+      needZero = section < 1000;
+    } else if (result) {
+      needZero = true;
+    }
+    remaining = Math.floor(remaining / 10000);
+    sectionIndex += 1;
+  }
+  return `${result.replace(/零+/g, '零')}元整`;
 }
 
 function paymentConditionText(form) {
@@ -552,12 +782,13 @@ function buildPlainText(form, rows) {
     `清潔類型：${pending(form.cleaningType)}`,
     `日期：${pending(form.quoteDate)}`,
     `有效日期至：${pending(form.validUntil)}`,
-    `客戶公司名稱：${pending(form.company)}`,
+    `公司名稱：${pending(form.company)}`,
     `統編：${pending(form.taxId)}`,
     `聯絡人：${pending(form.contact)}`,
     `聯絡電話：${pending(form.phone)}`,
     `社區：${pending(form.building)}`,
     `地址：${pending(form.address)}`,
+    `施工說明：${stripColorTags(pending(form.constructionNotes))}`,
     `房型：${pending(form.roomSummary)}`,
     `型態：${pending(form.projectType)}`,
     `施作日期：${pending(form.serviceDate)}`,
@@ -581,9 +812,7 @@ function buildPlainText(form, rows) {
     '',
     '條款及細則',
     stripColorTags(pending(form.terms)),
-    '',
-    '付款資訊',
-    stripColorTags(pending(form.paymentNote))
+    ''
   ].join('\n');
 }
 
@@ -672,7 +901,7 @@ function buildPrintHtml(form, rows) {
         <div class="meta-grid">
           <div class="meta-row"><span>日期</span><span>${escapeHtml(pending(form.quoteDate))}</span></div>
           <div class="meta-row"><span>有效日期至</span><span>${escapeHtml(pending(form.validUntil))}</span></div>
-          <div class="meta-row"><span>客戶公司名稱</span><span>${escapeHtml(pending(form.company))}</span></div>
+          <div class="meta-row"><span>公司名稱</span><span>${escapeHtml(pending(form.company))}</span></div>
           <div class="meta-row"><span>統編</span><span>${escapeHtml(pending(form.taxId))}</span></div>
           <div class="meta-row"><span>聯絡人</span><span>${escapeHtml(pending(form.contact))}</span></div>
           <div class="meta-row"><span>聯絡電話</span><span>${escapeHtml(pending(form.phone))}</span></div>
@@ -712,7 +941,6 @@ function buildPrintHtml(form, rows) {
           </div>
         </div>
         <div class="fee-note"><span>訂金</span><span>${escapeHtml(money(form.deposit))}</span><span>尾款</span><span>${escapeHtml(money(form.balance))}</span></div>
-        <p class="muted">${richTextHtml(pending(form.paymentNote))}</p>
       </div>
       <div class="box"><strong>條款及細則</strong><p class="muted">${richTextHtml(pending(form.terms))}</p><div class="signature">接受報價簽名：</div><div class="signature">驗收簽名：</div></div>
     </section>
@@ -745,7 +973,40 @@ function App() {
   const categoryRows = useMemo(() => buildCategoryRows(items, categoryConfig), [items, categoryConfig]);
 
   function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      const next = { ...current, [field]: value };
+
+      const syncFee = (prefix) => {
+        const subtotalField = `${prefix}Subtotal`;
+        const taxField = `${prefix}Tax`;
+        const totalField = `${prefix}Total`;
+        const subtotal = moneyNumber(next[subtotalField]);
+        if (subtotal === null) {
+          if (field === subtotalField) {
+            next[taxField] = '';
+            next[totalField] = '';
+          }
+          return;
+        }
+        const tax = Math.round(subtotal * 0.05);
+        next[taxField] = amountText(tax);
+        next[totalField] = amountText(subtotal + tax);
+      };
+
+      if (field === 'serviceSubtotal') syncFee('service');
+      if (field === 'cleaningSubtotal') syncFee('cleaning');
+
+      if (['serviceSubtotal', 'cleaningSubtotal', 'serviceTotal', 'cleaningTotal', 'deposit'].includes(field)) {
+        const serviceAmount = feeAmount(next.serviceTotal, next.serviceSubtotal, next.serviceTax) || 0;
+        const cleaningAmount = feeAmount(next.cleaningTotal, next.cleaningSubtotal, next.cleaningTax) || 0;
+        const depositAmount = moneyNumber(next.deposit);
+        if (depositAmount !== null) {
+          next.balance = amountText(Math.max(0, serviceAmount + cleaningAmount - depositAmount));
+        }
+      }
+
+      return next;
+    });
   }
 
   function openConfirmDialog({ title, message, confirmText, onConfirm }) {
@@ -834,8 +1095,13 @@ function App() {
 
   function updateCategoryDetail(category, value) {
     setItems((current) => {
-      const remaining = current.filter((item) => item.area !== category);
-      return [...remaining, { area: category, detail: value || '' }];
+      const next = [...current];
+      const index = next.findIndex((item) => item.area === category);
+      if (index >= 0) {
+        next[index] = { ...next[index], detail: value || '' };
+        return next;
+      }
+      return [...next, { area: category, detail: value || '' }];
     });
   }
 
@@ -845,7 +1111,7 @@ function App() {
 
   function addCategoryRow() {
     const key = `custom-${Date.now()}`;
-    setCategoryConfig((current) => [...current, { key, label: '' }]);
+    setCategoryConfig((current) => [...current, { key, label: '新增項目' }]);
     setItems((current) => [...current, { area: key, detail: '' }]);
     setOpenSections((current) => ({ ...current, items: true }));
   }
@@ -1099,7 +1365,7 @@ function App() {
       ['清潔類型', pending(form.cleaningType)],
       ['日期', pending(form.quoteDate)],
       ['有效日期至', pending(form.validUntil)],
-      ['客戶公司名稱', pending(form.company)],
+      ['公司名稱', pending(form.company)],
       ['統編', pending(form.taxId)],
       ['聯絡人', pending(form.contact)],
       ['聯絡電話', pending(form.phone)],
@@ -1142,56 +1408,36 @@ function App() {
     termsSheet['!cols'] = [{ wch: 90 }];
     XLSX.utils.book_append_sheet(wb, termsSheet, '條款及細則');
 
-    const paymentSheet = XLSX.utils.aoa_to_sheet([['付款資訊'], ...linesFromText(form.paymentNote).map((line) => [stripColorTags(line)])]);
-    paymentSheet['!cols'] = [{ wch: 90 }];
-    XLSX.utils.book_append_sheet(wb, paymentSheet, '付款資訊');
     XLSX.writeFile(wb, `場勘報價清單_${pending(form.company)}.xlsx`);
     setStatus('已下載 Excel');
   }
 
   async function downloadPdf() {
-    const preview = quoteRef.current;
     try {
-      if (!preview) return;
       setStatus('正在產生 PDF...');
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const canvas = await html2canvas(preview, { scale: 5, backgroundColor: '#ffffff', useCORS: true });
-      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const imgData = canvas.toDataURL('image/png');
-      const margin = 6;
-      const maxWidth = pageWidth - margin * 2;
-      const maxHeight = pageHeight - margin * 2;
-      const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
-      const imgWidth = canvas.width * ratio;
-      const imgHeight = canvas.height * ratio;
-      const x = (pageWidth - imgWidth) / 2;
-      const y = (pageHeight - imgHeight) / 2;
-
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(1);
-      const encodedImportText = encodePdfImportText(buildPlainText(form, categoryRows));
-      const importLines = [
-        PDF_IMPORT_START,
-        ...encodedImportText.match(/.{1,90}/g),
-        PDF_IMPORT_END
-      ];
-      doc.text(importLines, 3, 3);
-      doc.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight, undefined, 'FAST');
-      doc.save(`場勘報價清單_${pending(form.company)}.pdf`);
+      const pdfBytes = await createNativeQuotePdf(form, categoryRows);
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `場勘報價清單_${pending(form.company)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
       setStatus('已下載 PDF');
-    } catch {
+    } catch (error) {
+      console.error(error);
       const printWindow = window.open('', '_blank');
       printWindow.document.write(buildPrintHtml(form, categoryRows));
       printWindow.document.close();
-      setStatus('已開啟列印視窗，可選擇另存為 PDF');
+      setStatus('PDF 模板產生失敗，已開啟列印視窗。');
     }
   }
 
   const fields = [
     ['title', '估價單名稱'],
-    ['company', '客戶公司名稱'],
+    ['company', '公司名稱'],
     ['taxId', '統編'],
     ['contact', '聯絡人姓名'],
     ['phone', '聯絡電話'],
@@ -1206,7 +1452,7 @@ function App() {
   const metaRows = [
     { label: '日期', value: pending(form.quoteDate) },
     { label: '有效日期至', value: pending(form.validUntil) },
-    { label: '客戶公司名稱', value: pending(form.company) },
+    { label: '公司名稱', value: pending(form.company) },
     { label: '統編', value: pending(form.taxId) },
     { label: '聯絡人', value: pending(form.contact) },
     { label: '聯絡電話', value: pending(form.phone) },
@@ -1501,7 +1747,7 @@ function App() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 grid grid-cols-1 gap-3 rounded-md border border-[#dfe8d8] bg-white p-3 sm:grid-cols-3">
+                <div className="mt-3 grid grid-cols-1 gap-3 rounded-md border border-[#dfe8d8] bg-white p-3 sm:grid-cols-[0.7fr_0.7fr_1.8fr]">
                   {paymentSummaryFields.map(([field, label]) => (
                     <label key={field}>
                       <span className="mb-1 block text-xs font-bold text-stone-600">{label}</span>
@@ -1567,43 +1813,42 @@ function App() {
                   </label>
                   <label>
                     <span className="mb-1 block text-xs font-bold text-stone-600">施作日期</span>
-                    <input
-                      type="date"
-                      value={form.serviceDate}
-                      onChange={(event) => updateField('serviceDate', event.target.value)}
-                      className="h-10 w-full rounded-md border border-[#cfd8c8] bg-white px-3 text-[14px] outline-none transition placeholder:text-stone-400 focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        value={/^\d{4}-\d{2}-\d{2}$/.test(form.serviceDate) ? form.serviceDate : ''}
+                        onChange={(event) => updateField('serviceDate', event.target.value)}
+                        className="h-10 min-w-0 flex-1 rounded-md border border-[#cfd8c8] bg-white px-3 text-[14px] outline-none transition placeholder:text-stone-400 focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
+                        placeholder="待訂或 YYYY-MM-DD"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateField('serviceDate', '待訂')}
+                        className="h-10 rounded-md border border-[#cfd8c8] bg-[#fbfdf8] px-3 text-sm font-bold text-moss-700 transition hover:bg-moss-50"
+                      >
+                        待訂
+                      </button>
+                    </div>
                   </label>
                 </div>
               </section>
 
-              <label className="block rounded-md border border-[#dfe8d8] bg-[#fbfdf8] p-3">
-                <span className="mb-1 block text-sm font-semibold text-stone-800">付款資訊</span>
-                <span className="mb-2 block text-xs text-stone-500">會顯示在估價單底部，價格未填則留白。</span>
-                <RichTextEditor
-                  editorId="form:paymentNote"
-                  value={form.paymentNote}
-                  onChange={(value) => updateField('paymentNote', value)}
-                  onActivate={handleRichEditorActivate}
-                  className="min-h-24 w-full overflow-auto whitespace-pre-wrap rounded-md border border-[#cfd8c8] bg-white p-3 text-[15px] leading-7 outline-none transition focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
-                />
-              </label>
             </AccordionSection>
 
             <AccordionSection
-              title="特別說明"
-              description="估價單說明與條款。"
+              title="施工說明"
+              description="估價單上方施工須知內容。"
               open={openSections.notes}
               onToggle={() => toggleSection('notes')}
               className="order-5"
             >
               <label className="block rounded-md border border-[#dfe8d8] bg-[#fbfdf8] p-3">
-                <span className="mb-1 block text-sm font-semibold text-stone-800">特別說明</span>
+                <span className="mb-1 block text-sm font-semibold text-stone-800">施工說明</span>
                 <span className="mb-2 block text-xs text-stone-500">會顯示在估價單右上方，建議保留品質、驗收、現場差異等說明。</span>
                 <RichTextEditor
-                  editorId="form:specialNotes"
-                  value={form.specialNotes}
-                  onChange={(value) => updateField('specialNotes', value)}
+                  editorId="form:constructionNotes"
+                  value={form.constructionNotes}
+                  onChange={(value) => updateField('constructionNotes', value)}
                   onActivate={handleRichEditorActivate}
                   className="min-h-28 w-full overflow-auto whitespace-pre-wrap rounded-md border border-[#cfd8c8] bg-white p-3 text-[15px] leading-7 outline-none transition focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
                 />
@@ -1665,10 +1910,11 @@ function App() {
 
           <div className="min-h-0 flex-1 overflow-auto bg-[#edf2e8] p-4">
             <article ref={quoteRef} className="quote-export mx-auto overflow-hidden border-2 border-[#1e2d1b] bg-white text-[#25381f] shadow-[0_20px_60px_rgba(40,64,35,0.18)]">
-              <section className="quote-header grid grid-cols-1 bg-[#e8f3df] text-[#4f7d35] md:grid-cols-[1.2fr_0.9fr_170px]">
+              <section className="quote-header grid grid-cols-1 bg-[#e8f3df] text-[#4f7d35] md:grid-cols-[1.2fr_0.9fr_170px]" style={quotePreviewLayoutStyle}>
                 <div className="px-6 py-5">
-                  <p className="mb-1 text-center text-xs font-bold uppercase text-[#6f9461]">Quotation</p>
+                  <p className="quote-kicker mb-1 text-center text-xs font-bold uppercase text-[#6f9461]">Quotation</p>
                   <h3 className="mb-4 text-center text-3xl font-semibold tracking-normal text-[#3f6535]">{pending(form.title)}</h3>
+                  <p className="quote-contact-reminder">如對本報價內容有任何疑問，歡迎透過 LINE 商家與我們聯繫。</p>
                   <div className="grid overflow-hidden border-l border-t border-[#c6d9ba] sm:grid-cols-2">
                     {metaRows.map(({ label, value, wide }) => (
                       <div key={label} className={`grid min-w-0 grid-cols-[88px_minmax(0,1fr)] border-b border-r border-[#c6d9ba] text-[12px] ${wide ? 'sm:col-span-2' : ''}`}>
@@ -1679,23 +1925,40 @@ function App() {
                   </div>
                 </div>
                 <div className="px-6 py-5">
-                  <p className="border-b border-[#b7cdaa] pb-2 text-base font-bold text-[#3f6535]">特別說明</p>
-                  <div className="mt-3 space-y-2">
-                    {linesFromText(form.specialNotes).map((line, index) => (
-                      <div key={line} className="grid grid-cols-[24px_1fr] gap-2 leading-6">
-                        <span className="text-right font-bold text-[#5a8249]">{index + 1}</span>
-                        <p><RichText text={line.replace(/^\d+\s*[.、]?\s*/, '')} /></p>
-                      </div>
-                    ))}
+                  <p className="construction-notice-title">施工須知</p>
+                  <div className="construction-notice-list">
+                    {constructionNoticeCards(form.constructionNotes).map((card, index) => {
+                      const Icon = [SprayCan, UsersRound, ShieldCheck, Camera][index] || ShieldCheck;
+                      const isImportant = card.text.includes('[color=#d71920]') || card.text.includes('#d71920');
+                      return (
+                        <div key={`${card.title}-${index}`} className={`construction-notice-card ${isImportant ? 'construction-notice-card-important' : ''}`}>
+                          <div className="construction-notice-icon"><Icon size={constructionNoticePreviewConfig.iconSize} strokeWidth={constructionNoticePreviewConfig.iconStrokeWidth} /></div>
+                          <div className="construction-notice-copy">
+                            <p className="construction-notice-heading">{card.title}</p>
+                            <div className="construction-notice-text">
+                              {card.text.split('\n').map((line) => (
+                                <p key={line}><RichText text={line} /></p>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
                 <aside className="border-t border-[#c6d9ba] bg-[#f4f8ef] px-4 py-5 text-center md:border-l md:border-t-0">
                   <img className="brand-logo-mark mx-auto mb-2" src="/assets/brand-logo-mark.png" alt="微笑清家 Logo" />
-                  <p className="text-xl font-bold tracking-normal text-moss-800">微笑清家</p>
-                  <p className="mx-auto mb-3 max-w-[120px] break-all text-[10px] leading-4 text-moss-700">meant2clean.com</p>
+                  <p className="brand-name text-xl font-bold tracking-normal text-moss-800">微笑清家</p>
+                  <p className="brand-site mx-auto mb-3 max-w-[120px] break-all text-[10px] leading-4 text-moss-700">meant2clean.com</p>
                   <div className="brand-qr-secondary mb-3 flex justify-center gap-2">
-                    <img src="/assets/brand-qr-instagram.png" alt="Instagram QR" />
-                    <img src="/assets/brand-qr-facebook.png" alt="Facebook QR" />
+                    <div className="brand-qr-mini">
+                      <span>IG</span>
+                      <img src="/assets/brand-qr-instagram.png" alt="Instagram QR" />
+                    </div>
+                    <div className="brand-qr-mini">
+                      <span>FB</span>
+                      <img src="/assets/brand-qr-facebook.png" alt="Facebook QR" />
+                    </div>
                   </div>
                   <div className="brand-qr-primary flex justify-center">
                     <img src="/assets/brand-qr-line.png" alt="LINE QR Code" />
@@ -1703,18 +1966,20 @@ function App() {
                 </aside>
               </section>
 
-              <div className="border-y border-[#1e2d1b] bg-[#548436] px-4 py-2.5 text-center text-2xl font-semibold tracking-[0.18em] text-white">
+              <div className="quote-items-title-bar border-y border-[#1e2d1b] bg-[#548436] px-4 py-2.5 text-center text-2xl font-semibold tracking-[0.18em] text-white" style={quoteItemsLayoutStyle}>
                 {formatRoomSummary(form.roomSummary)}　施 作 項 目
               </div>
 
-              <div className="quote-items-grid">
+              <div className="quote-items-grid" style={quoteItemsLayoutStyle}>
                   {categoryRows.map((row) => {
-                    const highlighted = row.area === '注意事項' || row.area === '其他';
+                    const highlighted = constructionItemsPreviewConfig.featuredNumbers.includes(Number(row.number));
                     return (
                       <div key={row.area} className={`quote-item-row ${highlighted ? 'is-highlighted' : ''}`}>
                         <div className="quote-item-cell quote-item-no">{row.number}</div>
                         <div className="quote-item-cell quote-item-area">{row.area}</div>
-                        <div className="quote-item-cell quote-item-detail"><RichText text={row.detail} /></div>
+                        <div className="quote-item-cell quote-item-detail">
+                          <span className="quote-item-detail-text"><RichText text={row.detail} /></span>
+                        </div>
                       </div>
                     );
                   })}
@@ -1725,7 +1990,7 @@ function App() {
                   <div className="qbf-title">費 用 摘 要</div>
                   <div className="qbf-title">條 款 及 簽 核</div>
                 </div>
-                <div className="qbf-summary">
+                <div className="qbf-summary" style={bottomSummaryLayoutStyle}>
                   <div className="qbf-fees">
                     <div className="qbf-fee-cards">
                       {[
@@ -1753,7 +2018,10 @@ function App() {
                         </div>
                       ))}
                     </div>
-                    <div className="qbf-total">總計費用：{totalFeeText(form)}</div>
+                    <div className="qbf-total">
+                      <span className="qbf-total-badge"><span className="qbf-total-badge-text">應付總額</span></span>
+                      <span className="cell-content">{totalFeeText(form)}</span>
+                    </div>
                     <div className="qbf-installments">
                       <div>訂金匯款：{money(form.deposit)}</div>
                       <div>尾款：{money(form.balance)}</div>
@@ -1774,12 +2042,12 @@ function App() {
                       ))}
                     </div>
                     <div className="qbf-term-note">
-                      <p>驗收完畢完成驗收通過，視同完成通過驗收，</p>
-                      <p>事後無法要求再回現場進行二次清潔。</p>
+                      <p>驗收完畢完成驗收通過（照片/影片或放棄驗收）</p>
+                      <p>視同「完成通過驗收」 事後無法要求管家再回現場進行二次清潔。</p>
                     </div>
                   </div>
                 </div>
-                <div className="qbf-main">
+                <div className="qbf-main" style={termsSignatureLayoutStyle}>
                   <div className="qbf-payment">
                     <div className="qbf-section-label">
                       <span>付款資訊</span>
