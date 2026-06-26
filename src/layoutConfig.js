@@ -82,10 +82,10 @@ export const quoteLayoutConfig = {
         featuredPaddingY: 12,
         numberFontSize: 8.5,
         areaFontSize: 8.5,
-        detailFontSize: 8.2,
-        detailMinFontSize: 6.2,
-        detailLineHeight: 9.5,
-        detailMinLineHeight: 7.2,
+        detailFontSize: 7.2,
+        detailMinFontSize: 5.2,
+        detailLineHeight: 8.4,
+        detailMinLineHeight: 6.4,
         detailPaddingX: 8,
         detailWrapInset: 16,
         topAlignThreshold: 32,
@@ -93,8 +93,8 @@ export const quoteLayoutConfig = {
         specialDetail: {
           enabled: true,
           areas: ['廁所', '廚房', '窗戶'],
-          fontSize: 8.2,
-          lineHeight: 9.5
+          fontSize: 7.2,
+          lineHeight: 8.4
         }
       }
     },
@@ -102,7 +102,7 @@ export const quoteLayoutConfig = {
       columns: {
         leftWidth: 306
       },
-      headerHeight: 24,
+      headerHeight: 18,
       summaryHeight: 84,
       feeCardHeight: 54,
       feeCardBorderWidth: 0.6,

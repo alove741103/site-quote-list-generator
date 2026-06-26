@@ -2060,7 +2060,6 @@ function App() {
                       <div className="qbf-transfer-wrap">
                         <div className="payment-qr-label">掃碼付款</div>
                         <img className="payment-transfer-qr" src="/assets/payment-transfer-qr.png" alt="匯款 QR Code" />
-                        <div className="payment-qr-hint">轉帳 QR</div>
                       </div>
                     </div>
                   </div>

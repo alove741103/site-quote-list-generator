@@ -211,13 +211,15 @@ function wrap(text, font, size, maxWidth) {
       return;
     }
     let current = '';
+    const leading = lineText.match(/^\s*/)?.[0] || '';
+    const continuationPrefix = leading ? `${leading}  ` : '';
     Array.from(lineText).forEach((char) => {
       const next = `${current}${char}`;
       if (!current || font.widthOfTextAtSize(next, size) <= maxWidth) {
         current = next;
       } else {
         output.push(current);
-        current = char;
+        current = continuationPrefix ? `${continuationPrefix}${char}` : char;
       }
     });
     if (current) output.push(current);
@@ -264,6 +266,7 @@ function formatConstructionDetail(text) {
       const line = lineText.trim();
       if (/^[*•]/.test(line)) return `  • ${line.replace(/^[*•]\s*/, '')}`;
       if (/^[（(]/.test(line)) return `    ${line}`;
+      if (/^[或無不]/.test(line)) return `     ${line}`;
       return lineText;
     })
     .join('\n');
@@ -767,15 +770,17 @@ export async function createNativeQuotePdf(form, rows) {
   const mainY = bottomY + headH + summaryH;
   const signatureY = totalRowBottomY;
   const signatureH = outer.y + outer.h - 22 - signatureY;
-  cell(page, '付款資訊   匯款後請提供末五碼，以利對帳', outer.x, mainY, bottomLeftW, 20, { font: bold, size: 8.2, fillColor: C.white, color: C.ink, borderColor: C.line, minSize: 6.5, paddingX: 8, paddingY: 3, textLift: 0.7 });
-  const paymentY = mainY + 20;
+  const paymentInfoH = 14;
+  cell(page, '付款資訊   匯款後請提供末五碼，以利對帳', outer.x, mainY, bottomLeftW, paymentInfoH, { font: bold, size: 8.2, fillColor: C.white, color: C.ink, borderColor: C.line, minSize: 6.5, paddingX: 8, paddingY: 1.5, textLift: 0.7 });
+  const paymentY = mainY + paymentInfoH;
   const qrW = 92;
-  rect(page, outer.x, paymentY, bottomLeftW - qrW, mainH - 20, { color: C.white, borderWidth: 0 });
-  drawImageFit(page, bankCover, outer.x + 8, paymentY + 6, bottomLeftW - qrW - 16, mainH - 32);
-  rect(page, outer.x + bottomLeftW - qrW, paymentY, qrW, mainH - 20, { color: C.paleGreen, borderWidth: 0 });
-  roundedCell(page, '掃碼付款', outer.x + bottomLeftW - qrW + 18, paymentY + 10, 56, 16, 8, { font: bold, size: 8.3, align: 'center', fillColor: C.green, color: C.white, borderColor: C.green, minSize: 6.5, paddingY: 3 });
-  drawImageFit(page, paymentQr, outer.x + bottomLeftW - qrW + 4, paymentY + 28, 84, 112);
-  drawText(page, '轉帳 QR', outer.x + bottomLeftW - qrW, paymentY + mainH - 32, { font: bold, size: 7.5, color: C.green, maxWidth: qrW, align: 'center', textLift: 0.6 });
+  rect(page, outer.x, paymentY, bottomLeftW - qrW, mainH - paymentInfoH, { color: C.white, borderWidth: 0 });
+  line(page, outer.x + 1, paymentY, outer.x + bottomLeftW - qrW - 1, paymentY, { color: C.white, thickness: 1.2 });
+  drawImageFit(page, bankCover, outer.x + 8, paymentY + 5, bottomLeftW - qrW - 16, mainH - paymentInfoH - 10);
+  const qrSectionY = mainY;
+  rect(page, outer.x + bottomLeftW - qrW, qrSectionY, qrW, mainH, { color: C.paleGreen, borderWidth: 0 });
+  roundedCell(page, '掃碼付款', outer.x + bottomLeftW - qrW + 18, qrSectionY + 4, 56, 16, 8, { font: bold, size: 8.3, align: 'center', fillColor: C.green, color: C.white, borderColor: C.green, minSize: 6.5, paddingY: 3 });
+  drawImageFit(page, paymentQr, outer.x + bottomLeftW - qrW + 4, qrSectionY + 22, 84, 122);
 
   const signatureLayout = layout.termsSignature.signature;
   const sigW = bottomRightW / signatureLayout.columns;
