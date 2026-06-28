@@ -2,6 +2,7 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { quoteLayoutConfig } from './layoutConfig.js';
 import { themeConfig } from './themeConfig.js';
+import { wrapReadableTextByWidth } from './textLayout.js';
 
 const PDF_IMPORT_START = 'SITE_QUOTE_IMPORT_START';
 const PDF_IMPORT_END = 'SITE_QUOTE_IMPORT_END';
@@ -210,19 +211,29 @@ function wrap(text, font, size, maxWidth) {
       output.push('');
       return;
     }
-    let current = '';
-    const leading = lineText.match(/^\s*/)?.[0] || '';
-    const continuationPrefix = leading ? `${leading}  ` : '';
-    Array.from(lineText).forEach((char) => {
-      const next = `${current}${char}`;
-      if (!current || font.widthOfTextAtSize(next, size) <= maxWidth) {
-        current = next;
-      } else {
-        output.push(current);
-        current = continuationPrefix ? `${continuationPrefix}${char}` : char;
-      }
+    const readableLines = wrapReadableTextByWidth(lineText, {
+      maxWidth,
+      measure: (value) => font.widthOfTextAtSize(value, size)
     });
-    if (current) output.push(current);
+    readableLines.forEach((readableLine) => {
+      if (font.widthOfTextAtSize(readableLine, size) <= maxWidth) {
+        output.push(readableLine);
+        return;
+      }
+      let current = '';
+      const leading = readableLine.match(/^\s*/)?.[0] || '';
+      const continuationPrefix = leading ? `${leading}  ` : '';
+      Array.from(readableLine).forEach((char) => {
+        const next = `${current}${char}`;
+        if (!current || font.widthOfTextAtSize(next, size) <= maxWidth) {
+          current = next;
+        } else {
+          output.push(current);
+          current = continuationPrefix ? `${continuationPrefix}${char}` : char;
+        }
+      });
+      if (current) output.push(current);
+    });
   });
   return output;
 }
@@ -264,7 +275,7 @@ function formatConstructionDetail(text) {
     .split('\n')
     .map((lineText) => {
       const line = lineText.trim();
-      if (/^[*•]/.test(line)) return `  • ${line.replace(/^[*•]\s*/, '')}`;
+      if (/^[*•]/.test(line)) return line.replace(/^[*]\s*/, '• ');
       if (/^[（(]/.test(line)) return `    ${line}`;
       if (/^[或無不]/.test(line)) return `     ${line}`;
       return lineText;

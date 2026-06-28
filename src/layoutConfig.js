@@ -230,7 +230,7 @@ export const quoteLayoutConfig = {
     constructionItems: {
       titleBarPaddingY: 0.38,
       titleBarFontSize: 1.36,
-      columns: '48px 118px minmax(0, 1fr)',
+      columns: '34px 98px minmax(0, 1fr)',
       rowMinHeight: 34,
       cellLineHeight: 1.18,
       numberPadding: '0.5rem 0.75rem',
@@ -268,7 +268,8 @@ export const quoteLayoutConfig = {
       installmentFontSize: 12,
       red: '#d71920',
       totalRed: '#cf1118',
-      lineHeight: 1.18
+      lineHeight: 1.18,
+      titleMinHeight: 24
     },
     termsSignature: {
       termsGridRows: '70% 30%',
@@ -306,7 +307,7 @@ export const quoteLayoutConfig = {
       cardMinHeight: 52,
       cardCopyPadding: '9px 11px 9px 0',
       cardTitleFontSize: 12.8,
-      cardTextFontSize: 8.4,
+      cardTextFontSize: 10.4,
       cardTextLineHeight: 1.36,
       iconSize: 35,
       iconStrokeWidth: 2.7

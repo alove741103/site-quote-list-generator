@@ -258,7 +258,7 @@ textarea {
 }
 
 .quote-export {
-  width: 860px !important;
+  width: 960px !important;
   max-width: none !important;
   font-size: 12.8px !important;
   font-weight: 500 !important;
@@ -699,14 +699,16 @@ textarea {
   padding: var(--quote-item-detail-padding, 0.5rem 1rem);
   color: var(--theme-text, #111c12);
   font-weight: 650;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .quote-item-detail-text {
   display: block;
   width: 100%;
   white-space: var(--quote-item-detail-white-space, pre-wrap);
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .quote-item-detail-text span {
@@ -1282,7 +1284,7 @@ textarea {
 
 .qbf-title {
   display: flex;
-  min-height: 36px;
+  min-height: var(--qbf-title-min-height, 36px);
   align-items: center;
   justify-content: center;
   background: linear-gradient(180deg, var(--theme-primary-light, #d3e4ca) 0%, #c3d9b8 100%);
@@ -1565,7 +1567,7 @@ textarea {
 }
 
 .qbf-transfer-wrap {
-  align-content: center;
+  align-content: start;
   background: linear-gradient(180deg, #f8fbf4 0%, var(--theme-primary-pale, #f1f7ec) 100%);
   gap: 5px;
   box-shadow: inset 1px 0 0 rgb(15 31 13 / 0.08);
@@ -1688,7 +1690,7 @@ textarea {
 }
 
 .quote-export .qbf-title {
-  min-height: 34px;
+  min-height: var(--qbf-title-min-height, 24px);
   font-size: 1.04rem;
 }
 
@@ -1716,7 +1718,7 @@ textarea {
 }
 
 .quote-export .qbf-transfer-wrap .payment-transfer-qr {
-  width: 112px;
+  width: 122px;
 }
 
 .quote-export .qbf-term-list {

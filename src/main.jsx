@@ -8,6 +8,8 @@ import './styles.css';
 import { createNativeQuotePdf } from './nativePdf';
 import { quoteLayoutConfig } from './layoutConfig';
 import { themeConfig } from './themeConfig';
+import { FIXED_CONSTRUCTION_CATEGORIES, categoryNameByNo, parseConstructionText, parseCustomerText } from './aiSupplementParser';
+import { formatParagraphForOutput } from './textLayout';
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -107,7 +109,8 @@ const feeSummaryLayoutStyle = {
   '--qbf-installment-font-size': `${feeSummaryPreviewConfig.installmentFontSize}px`,
   '--qbf-fee-red': feeSummaryPreviewConfig.red,
   '--qbf-total-red': feeSummaryPreviewConfig.totalRed,
-  '--qbf-fee-line-height': feeSummaryPreviewConfig.lineHeight
+  '--qbf-fee-line-height': feeSummaryPreviewConfig.lineHeight,
+  '--qbf-title-min-height': `${feeSummaryPreviewConfig.titleMinHeight}px`
 };
 const termsSignaturePreviewConfig = quoteLayoutConfig.preview.termsSignature;
 const termsSignatureLayoutStyle = {
@@ -146,7 +149,8 @@ const DEFAULT_CATEGORIES = ['牆面地面', '客廳玄關', '臥室', '廁所', 
 const CATEGORIES = DEFAULT_CATEGORIES;
 const DEFAULT_CATEGORY_CONFIG = DEFAULT_CATEGORIES.map((category) => ({ key: category, label: category }));
 const BLANK_CASE_CATEGORY_CONFIG = DEFAULT_CATEGORY_CONFIG.filter((category) => category.key !== '其他');
-const CLEANING_TEMPLATE_OPTIONS = ['裝潢細清', '遷入清潔', '遷出清潔', '居家清潔', '空屋清潔', '其他'];
+const CLEANING_TEMPLATE_OPTIONS = ['裝潢細清', '遷入清潔', '遷出清潔', '居家清潔', '空屋清潔', '店面清潔', '其他'];
+const LONG_CONTENT_CATEGORIES = new Set(['窗戶', '注意事項', '其他']);
 
 const categoryRules = [
   { category: '牆面地面', keywords: ['牆', '壁', '地', '地板', '磁磚', '油漆', '壁癌', '踢腳', '天花'] },
@@ -173,17 +177,15 @@ const STANDARD_OTHER_ITEMS = [
   '如有疑問歡迎於Line商家提出。'
 ];
 
-const TEMPLATE_NOTICE_DETAIL = `*廁所乾濕分離門如有發霉、髒污及水垢皂垢管家都會盡量清潔，但可能無法100%去除還原。
-*石材檯面材質，水中的鈣、鎂礦物質會在水蒸發後沉澱在石材表面形成水垢，部分表面會有這個情形，
-  無法保證100%去除還原。
-*廚房重度油垢如已經結成油塊、瓦斯爐架如已經生鏽、有燒焦痕跡、可能無法100%去除還原。
-*大理石為特殊石材，如需拋光需尋求專業廠商`;
+const TEMPLATE_NOTICE_DETAIL = `• 廁所乾濕分離門如有發霉、髒污及水垢皂垢管家都會盡量清潔，但可能無法100%去除還原。
+• 石材檯面材質，水中的鈣、鎂礦物質會在水蒸發後沉澱在石材表面形成水垢，部分表面會有這個情形，無法保證100%去除還原。
+• 廚房重度油垢如已經結成油塊、瓦斯爐架如已經生鏽、有燒焦痕跡、可能無法100%去除還原。
+• 大理石為特殊石材，如需拋光需尋求專業廠商`;
 
-const TEMPLATE_OTHER_DETAIL = `*廢棄物: 管家僅協助整理集中，屋主需自備垃圾袋及自行清運。
-*燈具、玻璃有使用年限，容易老舊脆化造成。僅以灰塵撢除塵方式進行。
-*如物品老舊或是已不堪使用，可能導致破損或損壞，清潔前請先行知會。
-*另天然因素損壞如：油漆、磁磚、水泥、水管、燈飾...等，因熱脹冷縮或自然災害而導致龜裂、剝落之情形，
-  或金屬因潮濕或使用年限久遠而生鏽斷裂...等，如業主堅持清潔，微笑清家恕不賠償。`;
+const TEMPLATE_OTHER_DETAIL = `• 廢棄物: 管家僅協助整理集中，屋主需自備垃圾袋及自行清運。
+• 燈具、玻璃有使用年限，容易老舊脆化造成。僅以灰塵撢除塵方式進行。
+• 如物品老舊或是已不堪使用，可能導致破損或損壞，清潔前請先行知會。
+• 另天然因素損壞如：油漆、磁磚、水泥、水管、燈飾...等，因熱脹冷縮或自然災害而導致龜裂、剝落之情形，或金屬因潮濕或使用年限久遠而生鏽斷裂...等，如業主堅持清潔，微笑清家恕不賠償。`;
 
 const CLEANING_TEMPLATES = {
   裝潢細清: {
@@ -198,10 +200,9 @@ const CLEANING_TEMPLATES = {
       陽台: '陽台地板、牆面可及處、欄杆、排水孔與曬衣桿清潔。',
       窗戶: `全室玻璃、窗框、窗溝、紗窗清潔。
 (外窗管家以工具輔助會盡量清潔，無法100%無水痕殘留，如遇直角式窗戶無開窗縫，則以內窗、窗框溝施作為主)
-*安全考量: 窗戶會視情況是否拆窗施作，多數大樓窗戶比載重，如拆下有危險性，則以不拆窗施作。
-*如有窗戶紗窗為摺紗，因摺紗脆弱易損壞，故管家僅能以除塵撢除去灰塵，可能無法100%乾淨。
-*施作地點為高危險之處(如外窗、陽台、邊雨棚...)，或是無立足點、欄杆低於腰部...等部分，
-  不在服務範圍內，管家請勿以輔助工具施作`,
+• 安全考量: 窗戶會視情況是否拆窗施作，多數大樓窗戶比載重，如拆下有危險性，則以不拆窗施作。
+• 如有窗戶紗窗為摺紗，因摺紗脆弱易損壞，故管家僅能以除塵撢除去灰塵，可能無法100%乾淨。
+• 施作地點為高危險之處(如外窗、陽台、邊雨棚...)，或是無立足點、欄杆低於腰部...等部分，不在服務範圍內，管家請勿以輔助工具施作`,
       注意事項: TEMPLATE_NOTICE_DETAIL,
       其他: TEMPLATE_OTHER_DETAIL
     }
@@ -278,6 +279,11 @@ const CLEANING_TEMPLATES = {
   }
 };
 
+CLEANING_TEMPLATES.店面清潔 = {
+  title: '店面清潔 估價單',
+  items: { ...CLEANING_TEMPLATES.空屋清潔.items }
+};
+
 function numberedList(items) {
   return items.map((item, index) => `${index + 1} ${item}`).join('\n');
 }
@@ -286,11 +292,168 @@ function buildStandardSpecialNotes() {
   return numberedList([...STANDARD_NOTICE_ITEMS, ...STANDARD_OTHER_ITEMS]);
 }
 
+function createContentId() {
+  return `content-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function hashText(value) {
+  return Array.from(String(value || '')).reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0).toString(36).replace('-', 'm');
+}
+
+function createContentItem(text = '', options = {}) {
+  const rawText = String(text || '').trim();
+  return {
+    id: options.id || createContentId(),
+    text: stripColorTags(rawText),
+    enabled: options.enabled !== false,
+    custom: Boolean(options.custom),
+    type: options.type || 'tag',
+    deleted: Boolean(options.deleted),
+    red: options.red === true || /\[color=#[0-9a-fA-F]{6}\]/.test(rawText),
+    strike: Boolean(options.strike)
+  };
+}
+
+function contentTypeForCategory(category) {
+  return 'tag';
+}
+
+function splitDetailToTokens(detail, type = 'tag') {
+  const lines = String(detail || '')
+    .replace(/\r/g, '')
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*(?:[-*•・]|\d+[.、])\s*/, '').trim())
+    .filter(Boolean);
+  if (type === 'paragraph') return lines;
+  return lines
+    .flatMap((line) => line.split(/[、，,；;。]+/))
+    .map((line) => line.replace(/^\s*(?:[-*•・]|\d+[.、])\s*/, '').replace(/[，,。；;：:]+$/g, '').trim())
+    .filter(Boolean);
+}
+
+function isParagraphLine(line, category) {
+  if (!LONG_CONTENT_CATEGORIES.has(category)) return false;
+  return /^\s*[*•・(（]/.test(line) || /安全考量|廢棄物|無法100%|不在服務範圍|不賠償|石材|水垢|油垢/.test(line) || line.length > 42;
+}
+
+function splitBulletParagraphLines(detail) {
+  return String(detail || '')
+    .replace(/\r/g, '')
+    .split(/\n+/)
+    .flatMap((line) =>
+      line
+        .replace(/([^\n])\s*([•*])\s+/g, '$1\n$2 ')
+        .split('\n')
+    )
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function splitDetailToContentItems(detail, options = {}) {
+  if (!options.type && LONG_CONTENT_CATEGORIES.has(options.category)) {
+    const lines = splitBulletParagraphLines(detail);
+    return lines.flatMap((line, lineIndex) => {
+      const cleanedLine = line.replace(/^\s*(?:[-*•・]|\d+[.、])\s*/, '').trim();
+      const inferredType = isParagraphLine(line, options.category) ? 'paragraph' : 'tag';
+      if (inferredType === 'paragraph') {
+        return [createContentItem(cleanedLine, { ...options, type: 'paragraph', id: options.id || `content-${hashText(cleanedLine)}-${lineIndex}` })];
+      }
+      return splitDetailToTokens(line, 'tag').map((text, tokenIndex) =>
+        createContentItem(text, { ...options, type: 'tag', id: options.id || `content-${hashText(text)}-${lineIndex}-${tokenIndex}` })
+      );
+    });
+  }
+  const type = options.type || contentTypeForCategory(options.category);
+  const normalized = splitDetailToTokens(detail, type);
+  return normalized.map((text, index) => createContentItem(text, { ...options, id: options.id || `content-${hashText(text)}-${index}` }));
+}
+
+function normalizeContentItems(item) {
+  const type = contentTypeForCategory(item?.area);
+  if (Array.isArray(item?.contents)) {
+    return item.contents
+      .flatMap((content) => {
+        const normalized = createContentItem(content.text, { type: content.type || type, ...content });
+        const shouldSplitLoadedTag = normalized.type === 'tag' && normalized.custom !== true && /[、，,；;。]/.test(normalized.text);
+        return shouldSplitLoadedTag
+          ? splitDetailToContentItems(normalized.text, {
+              category: item?.area,
+              type: normalized.type,
+              custom: normalized.custom,
+              enabled: normalized.enabled,
+              deleted: normalized.deleted,
+              red: normalized.red,
+              strike: normalized.strike
+            })
+          : [normalized];
+      });
+  }
+  return splitDetailToContentItems(item?.detail || '', { custom: Boolean(item?.custom), category: item?.area, type });
+}
+
+function strikeThroughText(text) {
+  return Array.from(String(text || '')).map((char) => (/\s/.test(char) ? char : `${char}\u0336`)).join('');
+}
+
+function contentItemsToDetail(contents, { enabledOnly = false, emptyText = '' } = {}) {
+  const filtered = enabledOnly ? contents.filter((content) => content.enabled !== false && !content.deleted) : contents;
+  const source = [
+    ...filtered.filter((content) => content.type !== 'paragraph'),
+    ...filtered.filter((content) => content.type === 'paragraph')
+  ];
+  const lines = [];
+  let tagBuffer = [];
+  source.forEach((content) => {
+    const baseText = content.strike ? strikeThroughText(content.text) : content.text;
+    if (content.type === 'paragraph') {
+      if (tagBuffer.length) {
+        lines.push(tagBuffer.join('、'));
+        tagBuffer = [];
+      }
+      const paragraphText = formatParagraphForOutput(baseText);
+      const styledText = content.red ? `[color=#d71920]${paragraphText}[/color]` : paragraphText;
+      if (paragraphText) lines.push(styledText);
+      return;
+    }
+    const styledText = content.red ? `[color=#d71920]${baseText}[/color]` : baseText;
+    if (styledText) tagBuffer.push(styledText);
+  });
+  if (tagBuffer.length) lines.push(tagBuffer.join('、'));
+  const text = lines.filter(Boolean).join('\n');
+  return text || emptyText;
+}
+
 function templateItemsToRows(template) {
   return DEFAULT_CATEGORY_CONFIG.map((category) => ({
     area: category.key,
-    detail: template?.items?.[category.key] || ''
+    detail: template?.items?.[category.key] || '',
+    contents: splitDetailToContentItems(template?.items?.[category.key] || '', { category: category.key })
   }));
+}
+
+function otherTemplateItemsToRows() {
+  return DEFAULT_CATEGORY_CONFIG.map((category) => {
+    const detail =
+      category.key === '注意事項'
+        ? TEMPLATE_NOTICE_DETAIL
+        : category.key === '其他'
+          ? TEMPLATE_OTHER_DETAIL
+          : '';
+    return {
+      area: category.key,
+      detail,
+      contents: splitDetailToContentItems(detail, { category: category.key })
+    };
+  });
+}
+
+function cleaningTypeSelectValue(cleaningType) {
+  if (!cleaningType) return '';
+  return CLEANING_TEMPLATE_OPTIONS.includes(cleaningType) ? cleaningType : '其他';
+}
+
+function customCleaningTypeValue(cleaningType) {
+  return cleaningType && !CLEANING_TEMPLATE_OPTIONS.includes(cleaningType) ? cleaningType : '';
 }
 
 const defaultCleaningType = '';
@@ -700,6 +863,7 @@ function detectCleaningType(text) {
   if (/遷出|退租/.test(text)) return '遷出清潔';
   if (/居家|日常|大掃除/.test(text)) return '居家清潔';
   if (/空屋/.test(text)) return '空屋清潔';
+  if (/店面|商店|店鋪|門市/.test(text)) return '店面清潔';
   return '';
 }
 
@@ -765,12 +929,20 @@ function buildCategoryRows(items, categoryConfig = DEFAULT_CATEGORY_CONFIG) {
     }
   });
   return activeConfig.map((category, index) => {
-    const details = items.filter((item) => item.area === category.key).map((item) => item.detail || '');
+    const categoryItems = items.filter((item) => item.area === category.key);
+    const contents = categoryItems.flatMap((item) => normalizeContentItems(item));
+    const details = categoryItems.map((item) => item.detail || '');
     return {
       number: index + 1,
       area: category.label || '',
       key: category.key,
-      detail: details.length ? details.join('\n') : ''
+      enabled: category.enabled !== false,
+      contents,
+      detail: contents.length
+        ? contentItemsToDetail(contents, { enabledOnly: true, emptyText: '本項目未列入施作內容' })
+        : details.length
+          ? details.join('\n')
+          : ''
     };
   }).filter((row) => row.area || row.detail);
 }
@@ -956,9 +1128,13 @@ function App() {
   const [categoryConfig, setCategoryConfig] = useState(BLANK_CASE_CATEGORY_CONFIG);
   const [status, setStatus] = useState('');
   const [isOrganizing, setIsOrganizing] = useState(false);
+  const [customerAiPreview, setCustomerAiPreview] = useState(null);
+  const [aiSupplementPreview, setAiSupplementPreview] = useState(null);
   const [highlightColor, setHighlightColor] = useState('#d92626');
   const [activeTextTarget, setActiveTextTarget] = useState(null);
+  const [editingContent, setEditingContent] = useState(null);
   const [draggingCategoryKey, setDraggingCategoryKey] = useState('');
+  const [draggingContent, setDraggingContent] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [openSections, setOpenSections] = useState({
     survey: true,
@@ -971,6 +1147,7 @@ function App() {
   const textRefs = useRef({});
 
   const categoryRows = useMemo(() => buildCategoryRows(items, categoryConfig), [items, categoryConfig]);
+  const enabledCategoryRows = useMemo(() => categoryRows.filter((row) => row.enabled), [categoryRows]);
 
   function updateField(field, value) {
     setForm((current) => {
@@ -1025,6 +1202,7 @@ function App() {
 
   function applyCleaningTemplate(cleaningType) {
     if (cleaningType === form.cleaningType && items.length > 0) return;
+    if (cleaningType === '其他' && cleaningTypeSelectValue(form.cleaningType) === '其他' && items.length > 0) return;
     if (!cleaningType) {
       setForm((current) => ({ ...current, cleaningType: '' }));
       return;
@@ -1038,6 +1216,19 @@ function App() {
   }
 
   function applyCleaningTemplateNow(cleaningType) {
+    if (cleaningType === '其他') {
+      setForm((current) => ({
+        ...current,
+        cleaningType: '其他',
+        title: current.title || '清潔服務 估價單',
+        specialNotes: buildStandardSpecialNotes()
+      }));
+      setCategoryConfig(DEFAULT_CATEGORY_CONFIG);
+      setItems(otherTemplateItemsToRows());
+      setOpenSections((current) => ({ ...current, items: true, notes: true }));
+      setStatus('已套用「其他」空白範本，注意事項與其他事項已保留');
+      return;
+    }
     const template = CLEANING_TEMPLATES[cleaningType];
     setForm((current) => ({
       ...current,
@@ -1051,6 +1242,15 @@ function App() {
       setOpenSections((current) => ({ ...current, items: true, notes: true }));
       setStatus(`已套用「${cleaningType}」標準清潔範本，內容仍可手動編輯`);
     }
+  }
+
+  function updateCustomCleaningType(value) {
+    const nextName = value.trim();
+    setForm((current) => ({
+      ...current,
+      cleaningType: value,
+      title: nextName ? `${nextName} 估價單` : '清潔服務 估價單'
+    }));
   }
 
   function resetCurrentCase() {
@@ -1098,21 +1298,248 @@ function App() {
       const next = [...current];
       const index = next.findIndex((item) => item.area === category);
       if (index >= 0) {
-        next[index] = { ...next[index], detail: value || '' };
+        next[index] = { ...next[index], detail: value || '', contents: splitDetailToContentItems(value || '', { custom: next[index].custom, category }) };
         return next;
       }
-      return [...next, { area: category, detail: value || '' }];
+      return [...next, { area: category, detail: value || '', contents: splitDetailToContentItems(value || '', { custom: true, category }) }];
     });
+  }
+
+  function updateCategoryContents(category, updater) {
+    setItems((current) => {
+      const next = [...current];
+      const index = next.findIndex((item) => item.area === category);
+      const baseItem = index >= 0 ? next[index] : { area: category, detail: '', contents: [] };
+      const nextContents = updater(normalizeContentItems(baseItem)).filter((content) => content.text);
+      const nextItem = {
+        ...baseItem,
+        area: category,
+        contents: nextContents,
+        detail: contentItemsToDetail(nextContents)
+      };
+      if (index >= 0) {
+        next[index] = nextItem;
+        return next;
+      }
+      return [...next, nextItem];
+    });
+  }
+
+  function toggleContentItem(category, contentId) {
+    updateCategoryContents(category, (contents) =>
+      contents.map((content) => (content.id === contentId ? { ...content, enabled: content.enabled === false } : content))
+    );
+  }
+
+  function updateContentItemText(category, contentId, text) {
+    updateCategoryContents(category, (contents) =>
+      contents.map((content) => (content.id === contentId ? { ...content, text } : content))
+    );
+  }
+
+  function promptEditContentItem(category, content) {
+    setEditingContent({ category, contentId: content.id });
+  }
+
+  function removeContentItem(category, contentId) {
+    updateCategoryContents(category, (contents) => contents.map((content) => (content.id === contentId ? { ...content, deleted: true } : content)));
+    setEditingContent((current) => (current?.contentId === contentId ? null : current));
+    setStatus('已刪除施工內容');
+  }
+
+  function restoreContentItem(category, contentId) {
+    updateCategoryContents(category, (contents) => contents.map((content) => (content.id === contentId ? { ...content, deleted: false, enabled: true } : content)));
+    setStatus('已恢復施工內容');
+  }
+
+  function toggleContentRed(category, contentId) {
+    updateCategoryContents(category, (contents) => contents.map((content) => (content.id === contentId ? { ...content, red: !content.red } : content)));
+  }
+
+  function toggleContentStrike(category, contentId) {
+    updateCategoryContents(category, (contents) => contents.map((content) => (content.id === contentId ? { ...content, strike: !content.strike } : content)));
+  }
+
+  function moveContentItem(category, sourceId, targetId) {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    updateCategoryContents(category, (contents) => {
+      const next = [...contents];
+      const fromIndex = next.findIndex((content) => content.id === sourceId);
+      const toIndex = next.findIndex((content) => content.id === targetId);
+      if (fromIndex < 0 || toIndex < 0) return contents;
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }
+
+  function addContentItem(category) {
+    const content = createContentItem('新增內容', { custom: true, type: 'tag' });
+    updateCategoryContents(category, (contents) => [...contents, content]);
+    setEditingContent({ category, contentId: content.id });
+    setStatus('已新增施工內容');
+  }
+
+  function addParagraphItem(category) {
+    const content = createContentItem('新增段落', { custom: true, type: 'paragraph' });
+    updateCategoryContents(category, (contents) => [...contents, content]);
+    setEditingContent({ category, contentId: content.id });
+    setStatus('已新增段落內容');
+  }
+
+  function renderContentEditor(row, content) {
+    const isEditing = editingContent?.category === row.key && editingContent?.contentId === content.id;
+    const isParagraph = content.type === 'paragraph';
+    const isDeleted = content.deleted;
+    const isDisabled = isDeleted || content.enabled === false;
+    return (
+      <span
+        key={content.id}
+        draggable
+        onDragStart={(event) => {
+          setDraggingContent({ category: row.key, contentId: content.id });
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', content.id);
+        }}
+        onDragEnd={() => setDraggingContent(null)}
+        onDragOver={(event) => {
+          if (draggingContent?.category === row.key) event.preventDefault();
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          if (draggingContent?.category === row.key) {
+            moveContentItem(row.key, draggingContent.contentId, content.id);
+          }
+          setDraggingContent(null);
+        }}
+        className={`group relative inline-flex max-w-full cursor-grab items-start gap-1 border text-[13px] leading-5 transition active:cursor-grabbing ${
+          isParagraph ? 'w-full rounded-md px-3 py-2 pr-24' : 'rounded-full px-2.5 py-1 pr-20'
+        } ${
+          isDisabled
+            ? 'border-stone-200 bg-stone-100 text-stone-400'
+            : content.red
+              ? 'border-red-200 bg-red-50 text-red-700 shadow-sm'
+              : 'border-[#b9d0ad] bg-white text-moss-800 shadow-sm hover:bg-moss-50'
+        } ${content.strike || isDisabled ? 'line-through' : ''}`}
+      >
+        {isEditing ? (
+          isParagraph ? (
+            <textarea
+              autoFocus
+              value={content.text}
+              placeholder="輸入施工內容"
+              onChange={(event) => updateContentItemText(row.key, content.id, event.target.value)}
+              onBlur={() => setEditingContent(null)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') event.currentTarget.blur();
+              }}
+              className="min-h-16 w-full resize-y rounded-md border border-[#cbdcc2] bg-white px-2 py-1 text-[13px] leading-5 text-moss-900 outline-none focus:border-moss-700 focus:ring-2 focus:ring-moss-100"
+            />
+          ) : (
+            <input
+              autoFocus
+              value={content.text}
+              placeholder="輸入施工內容"
+              onChange={(event) => updateContentItemText(row.key, content.id, event.target.value)}
+              onBlur={() => setEditingContent(null)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === 'Escape') {
+                  event.currentTarget.blur();
+                }
+              }}
+              className="h-6 w-48 max-w-[52vw] rounded-full border border-[#cbdcc2] bg-white px-2 text-[13px] text-moss-900 outline-none focus:border-moss-700 focus:ring-2 focus:ring-moss-100"
+            />
+          )
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              if (content.deleted) {
+                restoreContentItem(row.key, content.id);
+                return;
+              }
+              toggleContentItem(row.key, content.id);
+            }}
+            onDoubleClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              promptEditContentItem(row.key, content);
+            }}
+            className={`${isParagraph ? 'whitespace-pre-wrap' : 'truncate'} max-w-full text-left`}
+            title="點一下停用/恢復，雙擊編輯"
+          >
+            {content.text}
+          </button>
+        )}
+        <span className={`absolute ${isParagraph ? 'right-2 top-2' : 'right-5 top-1/2 -translate-y-1/2'} inline-flex items-center gap-1`}>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleContentRed(row.key, content.id);
+            }}
+            className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold transition ${content.red ? 'bg-red-600 text-white' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
+            title="紅字"
+          >
+            紅
+          </button>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleContentStrike(row.key, content.id);
+            }}
+            className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold transition ${content.strike ? 'bg-stone-600 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
+            title="刪除線"
+          >
+            線
+          </button>
+        </span>
+        {isDisabled ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              restoreContentItem(row.key, content.id);
+            }}
+            className="absolute -right-1 -top-1 rounded-full border border-moss-100 bg-white px-1.5 py-0.5 text-[10px] font-bold text-moss-700 shadow-sm transition hover:bg-moss-50"
+            title="恢復此內容"
+            aria-label="恢復此內容"
+          >
+            復
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              removeContentItem(row.key, content.id);
+            }}
+            className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-red-100 bg-white text-red-500 shadow-sm transition hover:bg-red-50"
+            title="刪除此內容"
+            aria-label="刪除此內容"
+          >
+            <X size={10} />
+          </button>
+        )}
+      </span>
+    );
   }
 
   function updateCategoryLabel(key, value) {
     setCategoryConfig((current) => current.map((category) => (category.key === key ? { ...category, label: value } : category)));
   }
 
+  function toggleCategoryEnabled(key) {
+    setCategoryConfig((current) =>
+      current.map((category) => (category.key === key ? { ...category, enabled: category.enabled === false } : category))
+    );
+  }
+
   function addCategoryRow() {
     const key = `custom-${Date.now()}`;
-    setCategoryConfig((current) => [...current, { key, label: '新增項目' }]);
-    setItems((current) => [...current, { area: key, detail: '' }]);
+    setCategoryConfig((current) => [...current, { key, label: '新增項目', enabled: true }]);
+    setItems((current) => [...current, { area: key, detail: '', contents: [] }]);
     setOpenSections((current) => ({ ...current, items: true }));
   }
 
@@ -1199,8 +1626,12 @@ function App() {
     let addedCount = 0;
 
     setItems((current) => {
-      const existingTexts = new Set(current.map((item) => normalizeItemText(item.detail)).filter(Boolean));
-      const additions = [];
+      const existingTexts = new Set(
+        current
+          .flatMap((item) => normalizeContentItems(item).map((content) => normalizeItemText(stripColorTags(content.text))))
+          .filter(Boolean)
+      );
+      const next = [...current];
 
       rows.forEach((row) => {
         const detail = stripColorTags(row.detail || '').trim();
@@ -1209,18 +1640,160 @@ function App() {
         if (existingTexts.has(normalized)) return;
 
         const area = validAreas.has(row.area) ? row.area : detectCategory(`${row.area || ''} ${detail}`);
-        additions.push({ area: validAreas.has(area) ? area : '其他', detail });
+        const targetArea = validAreas.has(area) ? area : '其他';
+        const index = next.findIndex((item) => item.area === targetArea);
+        const content = createContentItem(detail, { custom: true, type: contentTypeForCategory(targetArea) });
+        if (index >= 0) {
+          const contents = [...normalizeContentItems(next[index]), content];
+          next[index] = {
+            ...next[index],
+            contents,
+            detail: contentItemsToDetail(contents)
+          };
+        } else {
+          next.push({
+            area: targetArea,
+            detail,
+            contents: [content]
+          });
+        }
         existingTexts.add(normalized);
+        addedCount += 1;
       });
 
-      addedCount = additions.length;
-      return additions.length ? [...current, ...additions] : current;
+      return addedCount ? next : current;
     });
 
     return addedCount;
   }
 
+  function updateAiPreviewItem(index, patch) {
+    setAiSupplementPreview((current) => {
+      if (!current) return current;
+      const detectedItems = current.detectedItems.map((item, itemIndex) => {
+        if (itemIndex !== index) return item;
+        const next = { ...item, ...patch };
+        if (patch.categoryNo) {
+          next.categoryNo = Number(patch.categoryNo);
+          next.categoryName = categoryNameByNo(patch.categoryNo);
+        }
+        return next;
+      });
+      return { ...current, detectedItems };
+    });
+  }
+
+  function removeAiPreviewItem(index) {
+    setAiSupplementPreview((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        detectedItems: current.detectedItems.filter((_, itemIndex) => itemIndex !== index)
+      };
+    });
+  }
+
+  function previewCustomerContent(text) {
+    if (!text.trim()) {
+      setStatus('請先貼上 LINE 對話或備註文字');
+      return;
+    }
+    const preview = parseCustomerText(text);
+    setCustomerAiPreview(preview);
+    const filledCount = Object.entries(preview).filter(([key, value]) => key !== 'unclassified' && value).length;
+    setStatus(`已產生客戶資料解析預覽：${filledCount} 個欄位，${preview.unclassified.length} 筆未分類`);
+  }
+
+  function updateCustomerPreviewField(field, value) {
+    setCustomerAiPreview((current) => (current ? { ...current, [field]: value } : current));
+  }
+
+  function applyCustomerAiPreview() {
+    if (!customerAiPreview) {
+      setStatus('目前沒有可套用的客戶資料');
+      return;
+    }
+
+    const fieldMap = {
+      quoteDate: 'quoteDate',
+      validUntil: 'validUntil',
+      companyName: 'company',
+      taxId: 'taxId',
+      contactName: 'contact',
+      contactPhone: 'phone',
+      community: 'building',
+      roomSummary: 'roomSummary',
+      houseType: 'projectType',
+      address: 'address'
+    };
+
+    setForm((current) => {
+      const next = { ...current };
+      Object.entries(fieldMap).forEach(([previewField, formField]) => {
+        const value = customerAiPreview[previewField];
+        if (value) next[formField] = value;
+      });
+      return next;
+    });
+    setCustomerAiPreview(null);
+    setOpenSections((current) => ({ ...current, customer: true }));
+    setStatus('已套用客戶資料');
+  }
+
+  function previewSupplementContent(text, mode = 'manual') {
+    if (!text.trim()) {
+      setStatus('請先貼上 LINE 對話或備註文字');
+      return;
+    }
+
+    setIsOrganizing(true);
+    setStatus(mode === 'paste' ? '已偵測貼上內容，正在解析補充內容...' : '正在解析補充內容...');
+
+    window.setTimeout(() => {
+      try {
+        const preview = parseConstructionText(text);
+        setAiSupplementPreview({
+          detectedItems: preview.detectedItems.map((item) => ({ ...item, enabled: true })),
+          unclassified: preview.unclassified
+        });
+        setStatus(
+          preview.detectedItems.length
+            ? `已產生施工內容解析預覽：${preview.detectedItems.length} 筆可分類，${preview.unclassified.length} 筆未分類`
+            : '沒有偵測到明確施工補充，請查看未分類內容'
+        );
+      } catch {
+        setAiSupplementPreview({ detectedItems: [], unclassified: [text] });
+        setStatus('解析失敗，已放入未分類內容，請手動確認');
+      } finally {
+        setIsOrganizing(false);
+      }
+    }, 0);
+  }
+
+  function applyAiSupplementPreview() {
+    if (!aiSupplementPreview?.detectedItems?.length) {
+      setStatus('目前沒有可套用的補充內容');
+      return;
+    }
+
+    const rows = aiSupplementPreview.detectedItems
+      .filter((item) => item.enabled !== false)
+      .map((item) => ({
+        area: item.categoryName,
+        detail: item.suggestedContent
+      }));
+
+    const addedCount = appendSupplementRows(rows);
+    setCategoryConfig((current) => current.map((category) => ({ ...category, enabled: true })));
+    setAiSupplementPreview(null);
+    setOpenSections((current) => ({ ...current, items: true }));
+    setStatus(addedCount ? `已套用 ${addedCount} 筆補充內容到施工項目` : '沒有新增內容，可能已存在相同項目');
+  }
+
   async function organizeTextContent(text, mode = 'manual') {
+    previewSupplementContent(text, mode);
+    return;
+
     if (!text.trim()) {
       setStatus('尚未偵測到可解析的 LINE 補充內容');
       return;
@@ -1258,7 +1831,7 @@ function App() {
   }
 
   async function parseLineSupplements() {
-    await organizeTextContent(form.rawText, 'manual');
+    previewSupplementContent(form.rawText, 'manual');
   }
 
   async function extractPdfText(file) {
@@ -1329,14 +1902,12 @@ function App() {
       if (fileName.endsWith('.pdf') && isLikelyMojibake(text)) {
         throw new Error('這份 PDF 讀到的是亂碼，請用新版重新下載 PDF 後再匯入，或改貼 LINE 文字內容。');
       }
-      const inferred = inferFormFields(text);
-
       setForm((current) => ({
         ...current,
-        ...Object.fromEntries(Object.entries(inferred).filter(([, value]) => value)),
         rawText: text
       }));
-      await organizeTextContent(text, 'file');
+      previewCustomerContent(text);
+      previewSupplementContent(text, 'file');
       setStatus(`已匯入 ${file.name}，並解析為補充項目`);
     } catch (error) {
       setStatus(`匯入失敗：${error.message || '無法讀取檔案內容'}`);
@@ -1350,12 +1921,11 @@ function App() {
     window.setTimeout(() => {
       const pastedText = target.value;
       updateField('rawText', pastedText);
-      organizeTextContent(pastedText, 'paste');
     }, 0);
   }
 
   async function copyResult() {
-    await navigator.clipboard.writeText(buildPlainText(form, categoryRows));
+    await navigator.clipboard.writeText(buildPlainText(form, enabledCategoryRows));
     setStatus('已複製結果');
   }
 
@@ -1386,7 +1956,7 @@ function App() {
       ['訂金', money(form.deposit)],
       ['尾款', money(form.balance)]
     ];
-    const itemRows = categoryRows.map((row) => ({
+    const itemRows = enabledCategoryRows.map((row) => ({
       編號: row.number,
       區域: row.area,
       施工細項: stripColorTags(row.detail)
@@ -1415,7 +1985,7 @@ function App() {
   async function downloadPdf() {
     try {
       setStatus('正在產生 PDF...');
-      const pdfBytes = await createNativeQuotePdf(form, categoryRows);
+      const pdfBytes = await createNativeQuotePdf(form, enabledCategoryRows);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -1429,7 +1999,7 @@ function App() {
     } catch (error) {
       console.error(error);
       const printWindow = window.open('', '_blank');
-      printWindow.document.write(buildPrintHtml(form, categoryRows));
+      printWindow.document.write(buildPrintHtml(form, enabledCategoryRows));
       printWindow.document.close();
       setStatus('PDF 模板產生失敗，已開啟列印視窗。');
     }
@@ -1514,7 +2084,7 @@ function App() {
               description="估價單抬頭、日期、聯絡資訊與地址。"
               open={openSections.customer}
               onToggle={() => toggleSection('customer')}
-              className="order-2"
+              className="order-3"
             >
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {fields.map(([field, label, type = 'text']) => (
@@ -1551,12 +2121,12 @@ function App() {
                     </span>
                   </div>
                   <span className="rounded-md bg-white px-3 py-2 text-xs font-bold text-moss-700 ring-1 ring-[#b9d0ad]">
-                    目前：{form.cleaningType}
+                    目前：{form.cleaningType || '請選擇清潔類型'}
                   </span>
                 </div>
                 <div className="relative">
                   <select
-                    value={form.cleaningType}
+                    value={cleaningTypeSelectValue(form.cleaningType)}
                     onChange={(event) => applyCleaningTemplate(event.target.value)}
                     className="h-13 w-full cursor-pointer appearance-none rounded-md border-2 border-moss-700 bg-white px-4 py-3 pr-11 text-[17px] font-black text-moss-800 shadow-inner outline-none transition hover:bg-[#fbfff8] focus:border-moss-800 focus:ring-4 focus:ring-moss-100"
                   >
@@ -1569,6 +2139,20 @@ function App() {
                   </select>
                   <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-moss-700" size={22} />
                 </div>
+                {cleaningTypeSelectValue(form.cleaningType) === '其他' && (
+                  <div className="mt-3 rounded-md border border-[#d7e5cf] bg-white p-3">
+                    <span className="mb-2 block text-sm font-bold text-stone-800">自訂清潔名稱</span>
+                    <input
+                      value={customCleaningTypeValue(form.cleaningType)}
+                      onChange={(event) => updateCustomCleaningType(event.target.value)}
+                      placeholder="例如：辦公室清潔、店面清潔、退租補強清潔"
+                      className="h-11 w-full rounded-md border border-[#cbdcc2] bg-[#fbfff8] px-3 text-sm font-semibold text-moss-900 outline-none transition focus:border-moss-700 focus:ring-4 focus:ring-moss-100"
+                    />
+                    <p className="mt-2 text-xs leading-5 text-stone-500">
+                      選擇其他時，施工項目 1-7 會保留空白，僅保留注意事項與其他事項內容。
+                    </p>
+                  </div>
+                )}
               </label>
 
               <section className="rounded-md border border-[#d7e5cf] bg-[#f4f9ef] p-3">
@@ -1603,24 +2187,156 @@ function App() {
                 />
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <button
+                    type="button"
+                    onClick={() => previewCustomerContent(form.rawText)}
+                    className="inline-flex h-11 items-center gap-2 rounded-md bg-white px-5 text-sm font-semibold text-moss-800 ring-1 ring-[#b9d0ad] transition hover:bg-moss-50"
+                  >
+                    客戶資料 AI
+                  </button>
+                  <button
+                    type="button"
                     onClick={parseLineSupplements}
                     disabled={isOrganizing}
                     className="inline-flex h-11 items-center gap-2 rounded-md bg-moss-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-moss-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Sparkles size={18} />
-                    {isOrganizing ? '解析中' : '解析補充內容'}
+                    {isOrganizing ? '解析中' : '施工內容 AI'}
                   </button>
-                  <span className="text-xs leading-5 text-stone-500">會依空間分類新增到「施工項目」，重複內容不會再次加入。</span>
+                  <span className="text-xs leading-5 text-stone-500">先產生預覽，確認後才會套用到表單或施工項目。</span>
                 </div>
               </label>
             </AccordionSection>
+
+            {customerAiPreview && (
+              <section className="order-2 rounded-md border border-[#c8d9bd] bg-white p-3">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-black text-moss-800">客戶資料解析預覽</h3>
+                    <p className="mt-1 text-xs leading-5 text-stone-500">只解析客戶資料，不會改動施工項目。確認後才會套用到表單。</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={applyCustomerAiPreview}
+                    className="inline-flex h-10 items-center justify-center rounded-md bg-moss-700 px-4 text-sm font-bold text-white transition hover:bg-moss-800"
+                  >
+                    套用客戶資料
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                  {[
+                    ['quoteDate', '日期'],
+                    ['validUntil', '有效日期至'],
+                    ['companyName', '公司名稱'],
+                    ['taxId', '統編'],
+                    ['contactName', '聯絡人'],
+                    ['contactPhone', '聯絡電話'],
+                    ['community', '社區'],
+                    ['roomSummary', '房型'],
+                    ['houseType', '型態'],
+                    ['address', '地址']
+                  ].map(([field, label]) => (
+                    <label key={field} className="block">
+                      <span className="mb-1 block text-xs font-bold text-moss-700">{label}</span>
+                      <input
+                        value={customerAiPreview[field] || ''}
+                        onChange={(event) => updateCustomerPreviewField(field, event.target.value)}
+                        className="h-9 w-full rounded-md border border-[#cfd8c8] bg-white px-2 text-sm outline-none focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
+                      />
+                    </label>
+                  ))}
+                </div>
+                {customerAiPreview.unclassified?.length > 0 && (
+                  <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+                    <h4 className="text-xs font-black text-amber-800">未分類內容</h4>
+                    <ul className="mt-2 space-y-1 text-xs leading-5 text-amber-900">
+                      {customerAiPreview.unclassified.map((text, index) => (
+                        <li key={`${text}-${index}`}>・{text}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {aiSupplementPreview && (
+              <section className="order-2 rounded-md border border-[#c8d9bd] bg-white p-3">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-black text-moss-800">施工內容解析預覽</h3>
+                    <p className="mt-1 text-xs leading-5 text-stone-500">只解析施工內容，不會改動客戶資料。確認後才會套用到施工項目。</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={applyAiSupplementPreview}
+                    className="inline-flex h-10 items-center justify-center rounded-md bg-moss-700 px-4 text-sm font-bold text-white transition hover:bg-moss-800"
+                  >
+                    套用施工項目
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {aiSupplementPreview.detectedItems.map((item, index) => (
+                    <div key={`${item.sourceText}-${index}`} className="grid gap-2 rounded-md border border-[#edf2e8] bg-[#fbfdf8] p-2 lg:grid-cols-[72px_140px_1fr_36px]">
+                      <label className="flex items-center gap-2 text-xs font-bold text-moss-700">
+                        <input
+                          type="checkbox"
+                          checked={item.enabled !== false}
+                          onChange={(event) => updateAiPreviewItem(index, { enabled: event.target.checked })}
+                          className="h-4 w-4 accent-moss-700"
+                        />
+                        加入
+                      </label>
+                      <select
+                        value={item.categoryNo}
+                        onChange={(event) => updateAiPreviewItem(index, { categoryNo: event.target.value })}
+                        className="h-9 rounded-md border border-[#cfd8c8] bg-white px-2 text-sm font-bold text-moss-700 outline-none focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
+                      >
+                        {FIXED_CONSTRUCTION_CATEGORIES.map((category) => (
+                          <option key={category.categoryNo} value={category.categoryNo}>
+                            {category.categoryNo}. {category.categoryName}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="min-w-0">
+                        <input
+                          value={item.suggestedContent}
+                          onChange={(event) => updateAiPreviewItem(index, { suggestedContent: event.target.value })}
+                          className="h-9 w-full rounded-md border border-[#cfd8c8] bg-white px-2 text-sm outline-none focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
+                        />
+                        <p className="mt-1 truncate text-[11px] text-stone-500">來源：{item.sourceText}｜信心 {Math.round((item.confidence || 0) * 100)}%</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeAiPreviewItem(index)}
+                        className="flex h-9 w-9 items-center justify-center rounded-md border border-red-100 bg-white text-red-500 transition hover:border-red-200 hover:bg-red-50"
+                        title="刪除"
+                        aria-label="刪除解析結果"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {aiSupplementPreview.unclassified.length > 0 && (
+                  <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+                    <h4 className="text-xs font-black text-amber-800">未分類內容</h4>
+                    <ul className="mt-2 space-y-1 text-xs leading-5 text-amber-900">
+                      {aiSupplementPreview.unclassified.map((text, index) => (
+                        <li key={`${text}-${index}`}>・{text}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            )}
 
             <AccordionSection
               title="施工項目"
               description="範本與 LINE 補充都會顯示在這裡，可手動微調與標色。"
               open={openSections.items}
               onToggle={() => toggleSection('items')}
-              className="order-3"
+              className="order-4"
             >
               <section className="rounded-md border border-[#dfe8d8] bg-white p-3">
                 <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1657,20 +2373,71 @@ function App() {
                       }`}
                     >
                       <span className="space-y-1">
-                        <span className="block text-xs font-bold text-moss-700">項目 {row.number}</span>
+                        <label className="flex items-center gap-2 text-xs font-bold text-moss-700">
+                          <input
+                            type="checkbox"
+                            checked={row.enabled}
+                            onChange={() => toggleCategoryEnabled(row.key)}
+                            className="h-4 w-4 accent-moss-700"
+                          />
+                          <span>項目 {row.number}</span>
+                          {!row.enabled && <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">已停用</span>}
+                        </label>
                         <input
                           value={row.area}
                           onChange={(event) => updateCategoryLabel(row.key, event.target.value)}
                           className="h-9 w-full rounded-md border border-[#cfd8c8] bg-white px-2 text-sm font-bold text-moss-700 outline-none transition focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
                         />
                       </span>
-                      <RichTextEditor
-                        editorId={`category:${row.key}`}
-                        value={row.detail}
-                        onChange={(value) => updateCategoryDetail(row.key, value)}
-                        onActivate={handleRichEditorActivate}
-                        className="min-h-20 w-full overflow-auto whitespace-pre-wrap rounded-md border border-[#cfd8c8] bg-[#fffefb] p-3 text-[14px] leading-6 outline-none transition focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
-                      />
+                      <div className="rounded-md border border-[#cfd8c8] bg-[#fffefb] p-3">
+                        {(() => {
+                          const tagContents = row.contents.filter((content) => content.type !== 'paragraph');
+                          const paragraphContents = row.contents.filter((content) => content.type === 'paragraph');
+                          const hasParagraphSection = LONG_CONTENT_CATEGORIES.has(row.area);
+                          return (
+                            <>
+                              <div className="flex flex-wrap gap-2">
+                                {tagContents.length ? (
+                                  tagContents.map((content) => renderContentEditor(row, content))
+                                ) : (
+                                  <span className="text-xs text-stone-400">尚無標準施工內容，可新增內容。</span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => addContentItem(row.key)}
+                                  className="inline-flex h-8 items-center gap-1 rounded-full border border-[#c8d9bd] bg-[#f4f9ef] px-3 text-xs font-bold text-moss-700 transition hover:bg-moss-50"
+                                >
+                                  <Plus size={14} />
+                                  新增內容
+                                </button>
+                              </div>
+
+                              {hasParagraphSection && (
+                                <div className="mt-3 border-t border-dashed border-[#c8d9bd] pt-3">
+                                  <div className="mb-2 flex items-center justify-between gap-2">
+                                    <span className="text-xs font-black text-moss-700">段落說明</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => addParagraphItem(row.key)}
+                                      className="inline-flex h-7 items-center gap-1 rounded-full border border-[#c8d9bd] bg-white px-2.5 text-xs font-bold text-moss-700 transition hover:bg-moss-50"
+                                    >
+                                      <Plus size={13} />
+                                      新增段落
+                                    </button>
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    {paragraphContents.length ? (
+                                      paragraphContents.map((content) => renderContentEditor(row, content))
+                                    ) : (
+                                      <span className="text-xs text-stone-400">尚無段落說明。</span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
                       <div className="flex gap-1 md:flex-col">
                         <div
                           draggable
@@ -1708,7 +2475,7 @@ function App() {
               description="清潔費用、訂金尾款與付款資訊。"
               open={openSections.payment}
               onToggle={() => toggleSection('payment')}
-              className="order-4"
+              className="order-5"
             >
               <section className="rounded-md border border-[#dfe8d8] bg-[#fbfdf8] p-3">
                 <div className="mb-3 flex items-center justify-between">
@@ -1840,7 +2607,7 @@ function App() {
               description="估價單上方施工須知內容。"
               open={openSections.notes}
               onToggle={() => toggleSection('notes')}
-              className="order-5"
+              className="order-6"
             >
               <label className="block rounded-md border border-[#dfe8d8] bg-[#fbfdf8] p-3">
                 <span className="mb-1 block text-sm font-semibold text-stone-800">施工說明</span>
@@ -1971,7 +2738,7 @@ function App() {
               </div>
 
               <div className="quote-items-grid" style={quoteItemsLayoutStyle}>
-                  {categoryRows.map((row) => {
+                  {enabledCategoryRows.map((row) => {
                     const highlighted = constructionItemsPreviewConfig.featuredNumbers.includes(Number(row.number));
                     return (
                       <div key={row.area} className={`quote-item-row ${highlighted ? 'is-highlighted' : ''}`}>
