@@ -55,7 +55,7 @@ function pending(value) {
 function formatRoomSummary(value) {
   const source = String(value || '').trim();
   if (!source) return '';
-  const slashMatch = source.match(/^(\d+)\s*[\/／]\s*(\d+)\s*[\/／]\s*(\d+)(?:\s*[\/／]\s*(\d+))?$/);
+  const slashMatch = source.match(/^(\d+)\s*[/／]\s*(\d+)\s*[/／]\s*(\d+)(?:\s*[/／]\s*(\d+))?$/);
   if (slashMatch) {
     return `${slashMatch[1]}房${slashMatch[2]}廳${slashMatch[3]}衛${slashMatch[4] ? `${slashMatch[4]}陽台` : ''}`;
   }
@@ -64,6 +64,77 @@ function formatRoomSummary(value) {
 
 function stripColorTags(text) {
   return String(text || '').replace(/\[color=[^\]]+\]([\s\S]*?)\[\/color\]/g, '$1');
+}
+
+function parseRichChars(text, defaultColor = C.ink) {
+  const source = String(text || '');
+  const chars = [];
+  const pattern = /\[color=(#[0-9a-fA-F]{6})\]([\s\S]*?)\[\/color\]/g;
+  let cursor = 0;
+  let match;
+  const pushChars = (value, color) => {
+    Array.from(value || '').forEach((char) => chars.push({ char, color }));
+  };
+  while ((match = pattern.exec(source))) {
+    pushChars(source.slice(cursor, match.index), defaultColor);
+    pushChars(match[2], hexToRgb(match[1]));
+    cursor = match.index + match[0].length;
+  }
+  pushChars(source.slice(cursor), defaultColor);
+  return chars;
+}
+
+function richLineSegments(chars, lineText, state, defaultColor = C.ink) {
+  const text = String(lineText || '');
+  const segments = [];
+  let segment = '';
+  let segmentColor = defaultColor;
+  while (chars[state.index]?.char === '\n') state.index += 1;
+  Array.from(text).forEach(() => {
+    while (chars[state.index]?.char === '\n') state.index += 1;
+    const current = chars[state.index] || { char: '', color: defaultColor };
+    if (!segment) {
+      segment = current.char;
+      segmentColor = current.color || defaultColor;
+    } else if (current.color === segmentColor) {
+      segment += current.char;
+    } else {
+      segments.push({ text: segment, color: segmentColor });
+      segment = current.char;
+      segmentColor = current.color || defaultColor;
+    }
+    state.index += 1;
+  });
+  if (segment) segments.push({ text: segment, color: segmentColor });
+  return segments.length ? segments : [{ text, color: defaultColor }];
+}
+
+function drawRichLine(page, lineText, x, y, options) {
+  const { font, size, color = C.ink, opacity, fauxBold = false, richChars, richState } = options;
+  const segments = richChars && richState ? richLineSegments(richChars, lineText, richState, color) : [{ text: lineText, color }];
+  let cursorX = x;
+  segments.forEach((segment) => {
+    if (!segment.text) return;
+    page.drawText(segment.text, {
+      x: cursorX,
+      y,
+      size,
+      font,
+      color: segment.color || color,
+      opacity
+    });
+    if (fauxBold) {
+      page.drawText(segment.text, {
+        x: cursorX + 0.18,
+        y,
+        size,
+        font,
+        color: segment.color || color,
+        opacity
+      });
+    }
+    cursorX += font.widthOfTextAtSize(segment.text, size);
+  });
 }
 
 function money(value) {
@@ -303,29 +374,22 @@ function drawText(page, text, x, y, options) {
   const actualSize = fitted?.size || size;
   const actualLineHeight = fitted?.lineHeight || lineHeight;
   const lines = fitted?.lines || (maxWidth ? wrap(text, font, actualSize, maxWidth) : String(stripColorTags(text || '')).split('\n'));
+  const richChars = parseRichChars(text, color);
+  const richState = { index: 0 };
   lines.forEach((lineText, index) => {
     const width = font.widthOfTextAtSize(lineText, actualSize);
     let textX = x;
     if (align === 'center' && maxWidth) textX = x + (maxWidth - width) / 2;
     if (align === 'right' && maxWidth) textX = x + maxWidth - width;
-    page.drawText(lineText, {
-      x: textX,
-      y: page.getHeight() - (y - textLift) - actualSize - index * actualLineHeight,
-      size: actualSize,
+    drawRichLine(page, lineText, textX, page.getHeight() - (y - textLift) - actualSize - index * actualLineHeight, {
       font,
+      size: actualSize,
       color,
-      opacity
+      opacity,
+      fauxBold,
+      richChars,
+      richState
     });
-    if (fauxBold) {
-      page.drawText(lineText, {
-        x: textX + 0.18,
-        y: page.getHeight() - (y - textLift) - actualSize - index * actualLineHeight,
-        size: actualSize,
-        font,
-        color,
-        opacity
-      });
-    }
   });
   return lines.length * actualLineHeight;
 }
@@ -355,6 +419,8 @@ function cell(page, text, x, y, w, h, options) {
   const lines = fit.lines;
   const actualSize = fit.size;
   const actualLineHeight = fit.lineHeight;
+  const richChars = parseRichChars(text, color);
+  const richState = { index: 0 };
   const blockH = lines.length * actualLineHeight;
   let textY = y + paddingY;
   if (valign === 'middle') textY = y + Math.max(paddingY, (h - blockH) / 2);
@@ -364,22 +430,14 @@ function cell(page, text, x, y, w, h, options) {
     let textX = x + paddingX;
     if (align === 'center') textX = x + (w - width) / 2;
     if (align === 'right') textX = x + w - paddingX - width;
-    page.drawText(lineText, {
-      x: textX,
-      y: page.getHeight() - (textY - textLift) - actualSize - index * actualLineHeight,
-      size: actualSize,
+    drawRichLine(page, lineText, textX, page.getHeight() - (textY - textLift) - actualSize - index * actualLineHeight, {
       font,
-      color
+      size: actualSize,
+      color,
+      fauxBold,
+      richChars,
+      richState
     });
-    if (fauxBold) {
-      page.drawText(lineText, {
-        x: textX + 0.18,
-        y: page.getHeight() - (textY - textLift) - actualSize - index * actualLineHeight,
-        size: actualSize,
-        font,
-        color
-      });
-    }
   });
 }
 
@@ -408,6 +466,8 @@ function roundedCell(page, text, x, y, w, h, radius, options) {
   const lines = fit.lines;
   const actualSize = fit.size;
   const actualLineHeight = fit.lineHeight;
+  const richChars = parseRichChars(text, color);
+  const richState = { index: 0 };
   const blockH = lines.length * actualLineHeight;
   let textY = y + paddingY;
   if (valign === 'middle') textY = y + Math.max(paddingY, (h - blockH) / 2);
@@ -417,22 +477,14 @@ function roundedCell(page, text, x, y, w, h, radius, options) {
     let textX = x + paddingX;
     if (align === 'center') textX = x + (w - width) / 2;
     if (align === 'right') textX = x + w - paddingX - width;
-    page.drawText(lineText, {
-      x: textX,
-      y: page.getHeight() - (textY - textLift) - actualSize - index * actualLineHeight,
-      size: actualSize,
+    drawRichLine(page, lineText, textX, page.getHeight() - (textY - textLift) - actualSize - index * actualLineHeight, {
       font,
-      color
+      size: actualSize,
+      color,
+      fauxBold,
+      richChars,
+      richState
     });
-    if (fauxBold) {
-      page.drawText(lineText, {
-        x: textX + 0.18,
-        y: page.getHeight() - (textY - textLift) - actualSize - index * actualLineHeight,
-        size: actualSize,
-        font,
-        color
-      });
-    }
   });
 }
 

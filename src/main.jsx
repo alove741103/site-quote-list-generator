@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Camera, ChevronDown, GripVertical, Plus, ShieldCheck, Sparkles, SprayCan, UsersRound, X } from 'lucide-react';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
@@ -12,6 +12,56 @@ import { FIXED_CONSTRUCTION_CATEGORIES, categoryNameByNo, parseConstructionText,
 import { formatParagraphForOutput } from './textLayout';
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+
+function renderDaisySettingsIcon() {
+  return (
+    <svg
+      className="daisy-settings-icon"
+      viewBox="0 0 96 96"
+      aria-hidden="true"
+      focusable="false"
+      role="img"
+    >
+      <defs>
+        <filter id="daisyIconSoftShadow" x="-25%" y="-25%" width="150%" height="150%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#2a3d22" floodOpacity="0.22" />
+        </filter>
+        <linearGradient id="daisyIconPetalFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="58%" stopColor="#f7fcfc" />
+          <stop offset="100%" stopColor="#dceced" />
+        </linearGradient>
+        <radialGradient id="daisyIconCenterFill" cx="42%" cy="38%" r="64%">
+          <stop offset="0%" stopColor="#ffe57b" />
+          <stop offset="48%" stopColor="#f8bf28" />
+          <stop offset="100%" stopColor="#d78f13" />
+        </radialGradient>
+      </defs>
+      <g filter="url(#daisyIconSoftShadow)">
+        <g fill="url(#daisyIconPetalFill)" stroke="#a9c7c8" strokeWidth="1.35" strokeLinejoin="round">
+          <ellipse cx="48" cy="19.5" rx="7.8" ry="18.5" transform="rotate(2 48 19.5)" />
+          <ellipse cx="48" cy="76.5" rx="7.8" ry="18.5" transform="rotate(178 48 76.5)" />
+          <ellipse cx="19.5" cy="48" rx="18.5" ry="7.8" transform="rotate(-2 19.5 48)" />
+          <ellipse cx="76.5" cy="48" rx="18.5" ry="7.8" transform="rotate(2 76.5 48)" />
+          <ellipse cx="28" cy="27.5" rx="7.3" ry="18" transform="rotate(-43 28 27.5)" />
+          <ellipse cx="68" cy="27.5" rx="7.3" ry="18" transform="rotate(43 68 27.5)" />
+          <ellipse cx="28" cy="68.5" rx="7.3" ry="18" transform="rotate(43 28 68.5)" />
+          <ellipse cx="68" cy="68.5" rx="7.3" ry="18" transform="rotate(-43 68 68.5)" />
+          <ellipse cx="38" cy="21.5" rx="6.4" ry="17" transform="rotate(-18 38 21.5)" />
+          <ellipse cx="58" cy="21.5" rx="6.4" ry="17" transform="rotate(18 58 21.5)" />
+          <ellipse cx="38" cy="74.5" rx="6.4" ry="17" transform="rotate(18 38 74.5)" />
+          <ellipse cx="58" cy="74.5" rx="6.4" ry="17" transform="rotate(-18 58 74.5)" />
+          <ellipse cx="21.5" cy="38" rx="17" ry="6.4" transform="rotate(18 21.5 38)" />
+          <ellipse cx="74.5" cy="38" rx="17" ry="6.4" transform="rotate(-18 74.5 38)" />
+          <ellipse cx="21.5" cy="58" rx="17" ry="6.4" transform="rotate(-18 21.5 58)" />
+          <ellipse cx="74.5" cy="58" rx="17" ry="6.4" transform="rotate(18 74.5 58)" />
+        </g>
+        <circle cx="48" cy="48" r="15.5" fill="url(#daisyIconCenterFill)" stroke="#c78312" strokeWidth="1.2" />
+        <circle cx="42.5" cy="42.5" r="2.1" fill="#fff1ad" opacity="0.72" />
+      </g>
+    </svg>
+  );
+}
 
 const constructionNoticePreviewConfig = quoteLayoutConfig.preview.constructionNotice;
 const headerPreviewConfig = quoteLayoutConfig.preview.header;
@@ -146,11 +196,11 @@ const bottomSummaryLayoutStyle = {
 };
 
 const DEFAULT_CATEGORIES = ['牆面地面', '客廳玄關', '臥室', '廁所', '廚房', '陽台', '窗戶', '注意事項', '其他'];
-const CATEGORIES = DEFAULT_CATEGORIES;
 const DEFAULT_CATEGORY_CONFIG = DEFAULT_CATEGORIES.map((category) => ({ key: category, label: category }));
 const BLANK_CASE_CATEGORY_CONFIG = DEFAULT_CATEGORY_CONFIG.filter((category) => category.key !== '其他');
 const CLEANING_TEMPLATE_OPTIONS = ['裝潢細清', '遷入清潔', '遷出清潔', '居家清潔', '空屋清潔', '店面清潔', '其他'];
 const LONG_CONTENT_CATEGORIES = new Set(['窗戶', '注意事項', '其他']);
+const INNER_OUTER_SCOPE_KEYWORDS = ['櫃體', '玻璃', '門片', '窗框', '抽屜', '流理台'];
 
 const categoryRules = [
   { category: '牆面地面', keywords: ['牆', '壁', '地', '地板', '磁磚', '油漆', '壁癌', '踢腳', '天花'] },
@@ -310,11 +360,47 @@ function createContentItem(text = '', options = {}) {
     type: options.type || 'tag',
     deleted: Boolean(options.deleted),
     red: options.red === true || /\[color=#[0-9a-fA-F]{6}\]/.test(rawText),
-    strike: Boolean(options.strike)
+    strike: Boolean(options.strike),
+    scope: options.scope || { inner: true, outer: true }
   };
 }
 
-function contentTypeForCategory(category) {
+function scopeKeywordForText(text) {
+  const source = String(text || '');
+  return INNER_OUTER_SCOPE_KEYWORDS.find((keyword) => source.includes(keyword));
+}
+
+function supportsInnerOuterScope(content) {
+  return content?.type !== 'paragraph' && Boolean(scopeKeywordForText(content?.text));
+}
+
+function normalizedScope(scope) {
+  const next = {
+    inner: scope?.inner !== false,
+    outer: scope?.outer !== false
+  };
+  return next.inner || next.outer ? next : { inner: true, outer: true };
+}
+
+function scopeText(scope) {
+  const next = normalizedScope(scope);
+  if (next.inner && next.outer) return '內外';
+  return next.inner ? '內' : '外';
+}
+
+function applyInnerOuterScope(text, content) {
+  if (!supportsInnerOuterScope(content)) return text;
+  const keyword = scopeKeywordForText(text);
+  if (!keyword) return text;
+  const selected = scopeText(content.scope);
+  const source = String(text || '');
+  if (source.includes('內外')) return source.replace('內外', selected);
+  const scopedKeywordPattern = new RegExp(`${keyword}[內外]`);
+  if (scopedKeywordPattern.test(source)) return source.replace(scopedKeywordPattern, `${keyword}${selected}`);
+  return source.replace(keyword, `${keyword}${selected}`);
+}
+
+function contentTypeForCategory() {
   return 'tag';
 }
 
@@ -404,7 +490,8 @@ function contentItemsToDetail(contents, { enabledOnly = false, emptyText = '' } 
   const lines = [];
   let tagBuffer = [];
   source.forEach((content) => {
-    const baseText = content.strike ? strikeThroughText(content.text) : content.text;
+    const scopedText = applyInnerOuterScope(content.text, content);
+    const baseText = content.strike ? strikeThroughText(scopedText) : scopedText;
     if (content.type === 'paragraph') {
       if (tagBuffer.length) {
         lines.push(tagBuffer.join('、'));
@@ -445,6 +532,135 @@ function otherTemplateItemsToRows() {
       contents: splitDetailToContentItems(detail, { category: category.key })
     };
   });
+}
+
+const COMPANY_TEMPLATE_STORAGE_KEY = 'meant2clean.companyTemplates.v2';
+const LEGACY_COMPANY_TEMPLATE_STORAGE_KEY = 'meant2clean.companyDefaultTemplate.v1';
+
+function cloneCategoryConfig(categoryConfig = []) {
+  return categoryConfig.map((category) => ({
+    key: category.key,
+    label: category.label || category.key,
+    enabled: category.enabled !== false
+  }));
+}
+
+function normalizeTemplateContents(item) {
+  return normalizeContentItems(item).map((content) =>
+    createContentItem(content.text, {
+      ...content,
+      id: content.id || createContentId(),
+      scope: normalizedScope(content.scope)
+    })
+  );
+}
+
+function cloneTemplateItems(items = []) {
+  return items.map((item) => {
+    const contents = normalizeTemplateContents(item).filter((content) => !content.deleted);
+    return {
+      area: item.area,
+      detail: contentItemsToDetail(contents),
+      custom: Boolean(item.custom),
+      contents
+    };
+  });
+}
+
+function createCompanyTemplateSnapshot(form, items, categoryConfig) {
+  return {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    cleaningType: form.cleaningType || '',
+    title: form.title || '',
+    categoryConfig: cloneCategoryConfig(categoryConfig),
+    items: cloneTemplateItems(items)
+  };
+}
+
+function normalizeCompanyTemplate(rawTemplate) {
+  if (!rawTemplate || !Array.isArray(rawTemplate.items)) return null;
+  const categoryConfig = Array.isArray(rawTemplate.categoryConfig)
+    ? cloneCategoryConfig(rawTemplate.categoryConfig)
+    : cloneCategoryConfig(DEFAULT_CATEGORY_CONFIG);
+  const items = cloneTemplateItems(rawTemplate.items).filter((item) => item.area);
+  return {
+    version: 1,
+    savedAt: rawTemplate.savedAt || new Date().toISOString(),
+    cleaningType: rawTemplate.cleaningType || '',
+    title: rawTemplate.title || '',
+    categoryConfig: categoryConfig.length ? categoryConfig : cloneCategoryConfig(DEFAULT_CATEGORY_CONFIG),
+    items
+  };
+}
+
+function normalizeCompanyTemplateStore(rawStore) {
+  const templates = {};
+  if (rawStore?.templates && typeof rawStore.templates === 'object') {
+    Object.entries(rawStore.templates).forEach(([key, template]) => {
+      const normalized = normalizeCompanyTemplate(template);
+      if (key && normalized) templates[key] = normalized;
+    });
+  }
+  return {
+    version: 2,
+    savedAt: rawStore?.savedAt || new Date().toISOString(),
+    templates
+  };
+}
+
+function readCompanyTemplateStore() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(COMPANY_TEMPLATE_STORAGE_KEY);
+    if (raw) return normalizeCompanyTemplateStore(JSON.parse(raw));
+    const legacyRaw = window.localStorage.getItem(LEGACY_COMPANY_TEMPLATE_STORAGE_KEY);
+    const legacyTemplate = legacyRaw ? normalizeCompanyTemplate(JSON.parse(legacyRaw)) : null;
+    if (!legacyTemplate?.cleaningType) return normalizeCompanyTemplateStore({});
+    return normalizeCompanyTemplateStore({
+      templates: {
+        [legacyTemplate.cleaningType]: legacyTemplate
+      }
+    });
+  } catch {
+    return normalizeCompanyTemplateStore({});
+  }
+}
+
+function writeCompanyTemplateStore(store) {
+  if (typeof window === 'undefined') return false;
+  const normalized = normalizeCompanyTemplateStore(store);
+  window.localStorage.setItem(COMPANY_TEMPLATE_STORAGE_KEY, JSON.stringify(normalized, null, 2));
+  return true;
+}
+
+function getCompanyTemplateForType(cleaningType) {
+  if (!cleaningType) return null;
+  return readCompanyTemplateStore()?.templates?.[cleaningType] || null;
+}
+
+function writeCompanyTemplateForType(cleaningType, template) {
+  if (!cleaningType) return false;
+  const normalized = normalizeCompanyTemplate(template);
+  if (!normalized) return false;
+  const store = readCompanyTemplateStore() || normalizeCompanyTemplateStore({});
+  store.templates = { ...store.templates, [cleaningType]: normalized };
+  store.savedAt = new Date().toISOString();
+  return writeCompanyTemplateStore(store);
+}
+
+function clearCompanyTemplates() {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(COMPANY_TEMPLATE_STORAGE_KEY);
+  window.localStorage.removeItem(LEGACY_COMPANY_TEMPLATE_STORAGE_KEY);
+}
+
+function createNewCaseState() {
+  return {
+    form: createEmptyForm(),
+    categoryConfig: BLANK_CASE_CATEGORY_CONFIG,
+    items: []
+  };
 }
 
 function cleaningTypeSelectValue(cleaningType) {
@@ -669,37 +885,9 @@ function RichText({ text }) {
   );
 }
 
-function normalizeText(text) {
-  return stripColorTags(text)
-    .replace(/\r/g, '\n')
-    .split(/\n|。|；|;|、(?=\S{3,})/g)
-    .map((line) => line.replace(/^[\s\d.、\-*•]+/, '').trim())
-    .filter((line) => !/^(社區|社區大樓|社區\/大樓|大樓|案場|門牌|地址|地點|位置|聯絡人|聯絡人姓名|窗口|電話|聯絡電話|手機|聯絡手機|房型|格局|型態|案件類型|清潔類型)\s*[:：@]/.test(line))
-    .filter(Boolean);
-}
-
 function detectCategory(text) {
   const compact = text.toLowerCase();
   return categoryRules.find((rule) => rule.keywords.some((keyword) => compact.includes(keyword)))?.category || '其他';
-}
-
-function localOrganize(rawText) {
-  const lines = normalizeText(rawText);
-  if (!lines.length) return [{ area: '其他', detail: '施工內容待確認' }];
-  return lines.map((line) => ({ area: detectCategory(line), detail: line || '待確認' }));
-}
-
-function sanitizeAiRows(rows) {
-  const validAreas = new Set(CATEGORIES);
-  const cleaned = Array.isArray(rows)
-    ? rows
-        .map((row) => ({
-          area: validAreas.has(row.area) ? row.area : detectCategory(`${row.area || ''} ${row.detail || ''}`),
-          detail: row.detail?.trim() || '待確認'
-        }))
-        .filter((row) => !/^(社區|社區大樓|社區\/大樓|大樓|案場|門牌|地址|地點|位置|聯絡人|聯絡人姓名|窗口|電話|聯絡電話|手機|聯絡手機|房型|格局|型態|案件類型|清潔類型)\s*[:：@]/.test(stripColorTags(row.detail)))
-    : [];
-  return cleaned.length ? cleaned : [{ area: '其他', detail: '施工內容待確認' }];
 }
 
 function normalizeItemText(value) {
@@ -742,7 +930,7 @@ function money(value) {
 function formatRoomSummary(value) {
   const source = String(value || '').trim();
   if (!source) return '';
-  const slashMatch = source.match(/^(\d+)\s*[\/／]\s*(\d+)\s*[\/／]\s*(\d+)(?:\s*[\/／]\s*(\d+))?$/);
+  const slashMatch = source.match(/^(\d+)\s*[/／]\s*(\d+)\s*[/／]\s*(\d+)(?:\s*[/／]\s*(\d+))?$/);
   if (slashMatch) {
     return `${slashMatch[1]}房${slashMatch[2]}廳${slashMatch[3]}衛${slashMatch[4] ? `${slashMatch[4]}陽台` : ''}`;
   }
@@ -829,98 +1017,6 @@ function paymentConditionText(form) {
   return form.paymentCondition === '其他' ? pending(form.paymentConditionOther) : pending(form.paymentCondition);
 }
 
-function termsExtraText(form) {
-  const extraLines = linesFromText(form.terms).filter((line) => !/^\d+\s*[.．、]/.test(stripColorTags(line)));
-  return extraLines.length
-    ? extraLines.join('\n')
-    : '驗收完畢完成驗收通過，視同完成通過驗收，\n事後無法要求再回現場進行二次清潔。';
-}
-
-function pickField(text, patterns) {
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match?.[1]) return match[1].trim().replace(/[，,。；;]+$/g, '');
-  }
-  return '';
-}
-
-function cleanInferredField(value) {
-  return String(value || '')
-    .split('\n')[0]
-    .replace(/^(是|為|在|於)\s*/g, '')
-    .replace(/[，,。；;、]+$/g, '')
-    .trim();
-}
-
-function detectProjectType(text) {
-  const types = ['退租', '遷出', '遷入', '入住前', '入住中', '空屋', '裝潢後', '新成屋', '細清', '粗清', '交屋', '大掃除'];
-  return types.find((type) => text.includes(type)) || '';
-}
-
-function detectCleaningType(text) {
-  if (/裝潢|細清|新成屋|交屋/.test(text)) return '裝潢細清';
-  if (/遷入|入住前/.test(text)) return '遷入清潔';
-  if (/遷出|退租/.test(text)) return '遷出清潔';
-  if (/居家|日常|大掃除/.test(text)) return '居家清潔';
-  if (/空屋/.test(text)) return '空屋清潔';
-  if (/店面|商店|店鋪|門市/.test(text)) return '店面清潔';
-  return '';
-}
-
-function detectPhone(text) {
-  return pickField(text, [
-    /(?:聯絡電話|聯絡手機|手機|電話|tel|phone)\s*[:：]?\s*([+()0-9\-\s]{8,})/i,
-    /((?:09\d{2}|0\d{1,2})[-\s]?\d{3,4}[-\s]?\d{3,4})/
-  ]).replace(/\s+/g, '');
-}
-
-function pickLineValue(text, labels) {
-  for (const label of labels) {
-    const pattern = new RegExp(`${label}\\s*[:：]?\\s*@?\\s*([^\\n]+)`, 'i');
-    const match = text.match(pattern);
-    if (match?.[1]) return cleanInferredField(match[1]);
-  }
-  return '';
-}
-
-function normalizeDateValue(value) {
-  const match = value?.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})|(\d{3})年(\d{1,2})月(\d{1,2})日?/);
-  if (!match) return value || '';
-  if (match[1]) {
-    return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
-  }
-  const year = String(Number(match[4]) + 1911);
-  return `${year}-${match[5].padStart(2, '0')}-${match[6].padStart(2, '0')}`;
-}
-
-function inferFormFields(text) {
-  const lineFields = {
-    building: pickLineValue(text, ['社區', '社區大樓', '社區/大樓', '大樓', '案場']),
-    address: pickLineValue(text, ['門牌', '地址', '地點', '位置']),
-    contact: pickLineValue(text, ['聯絡人', '聯絡人姓名', '窗口']),
-    phone: pickLineValue(text, ['電話', '聯絡電話', '手機', '聯絡手機']).replace(/\s+/g, ''),
-    roomSummary: pickLineValue(text, ['房型', '格局']),
-    projectType: pickLineValue(text, ['型態', '案件類型']),
-    cleaningType: pickLineValue(text, ['清潔類型', '服務類型'])
-  };
-
-  return {
-    title: cleanInferredField(pickField(text, [/([^\n]{2,20}估價單)/])),
-    quoteDate: normalizeDateValue(pickField(text, [/報價日期\s*[:：]?\s*([0-9/-]{6,10})/, /日期\s*[:：]?\s*([0-9/-]{6,10})/, /日期\s*(\d{3}年\d{1,2}月\d{1,2}日?)/])),
-    validUntil: normalizeDateValue(pickField(text, [/有效日期至\s*[:：]?\s*([0-9/-]{6,10})/, /有效期限\s*[:：]?\s*([0-9/-]{6,10})/, /有效日期至\s*(\d{3}年\d{1,2}月\d{1,2}日?)/])),
-    company: cleanInferredField(pickField(text, [/客戶公司名稱\s*[:：]?\s*([^\n]+)/, /公司名稱\s*[:：]?\s*([^\n]+)/, /客戶\s*[:：]?\s*([^\n]+)/])),
-    taxId: pickField(text, [/統編\s*[:：]?\s*([0-9]{8})/, /統一編號\s*[:：]?\s*([0-9]{8})/]),
-    contact: lineFields.contact || cleanInferredField(pickField(text, [/聯絡人姓名\s*[:：]?\s*([^\n]+)/, /聯絡人\s*[:：]?\s*([^\n]+)/, /(?:^|\n)\s*([^\n，,。:：\s]{1,6}(?:先生|小姐|太太|主任|經理|總幹事))/])),
-    phone: lineFields.phone || detectPhone(text),
-    building: lineFields.building || cleanInferredField(pickField(text, [/社區\/大樓\s*[:：]?\s*([^\n]+)/, /社區大樓\s*[:：]?\s*([^\n]+)/, /社區\s*[:：]?\s*([^\n]+)/, /大樓\s*[:：]?\s*([^\n]+)/, /案場\s*[:：]?\s*([^\n]+)/])),
-    address: lineFields.address || cleanInferredField(pickField(text, [/門牌\s*[:：]?\s*([^\n]+)/, /地址\s*[:：]?\s*([^\n]+)/, /(?:地點|位置)\s*[:：]?\s*([^\n]+)/, /((?:台北|臺北|新北|桃園|台中|臺中|台南|臺南|高雄|基隆|新竹|苗栗|彰化|南投|雲林|嘉義|屏東|宜蘭|花蓮|台東|臺東|澎湖|金門|連江)[^\n，,。]{6,})/])),
-    roomSummary: lineFields.roomSummary || cleanInferredField(pickField(text, [/((?:\d+\s*房)\s*(?:\d+\s*廳)?\s*(?:\d+\s*衛|衛浴)?\s*(?:\d+\s*陽台)?)/, /房型\s*[:：]?\s*([^\n]+)/, /格局\s*[:：]?\s*([^\n]+)/])),
-    projectType: lineFields.projectType || cleanInferredField(pickField(text, [/型態\s*[:：]?\s*([^\n]+)/, /案件類型\s*[:：]?\s*([^\n]+)/])) || detectProjectType(text),
-    cleaningType: CLEANING_TEMPLATE_OPTIONS.includes(lineFields.cleaningType) ? lineFields.cleaningType : detectCleaningType(text),
-    serviceDate: normalizeDateValue(pickField(text, [/施作日期\s*[:：]?\s*([^\n]+)/, /施工日期\s*[:：]?\s*([^\n]+)/, /清潔日期\s*[:：]?\s*([^\n]+)/]))
-  };
-}
-
 function buildCategoryRows(items, categoryConfig = DEFAULT_CATEGORY_CONFIG) {
   const activeConfig = [...categoryConfig];
   items.forEach((item) => {
@@ -986,15 +1082,6 @@ function buildPlainText(form, rows) {
     stripColorTags(pending(form.terms)),
     ''
   ].join('\n');
-}
-
-function encodePdfImportText(text) {
-  const bytes = new TextEncoder().encode(text);
-  let binary = '';
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary);
 }
 
 function decodePdfImportText(encoded) {
@@ -1094,7 +1181,7 @@ function buildPrintHtml(form, rows) {
         <div>meant2clean.com</div>
       </div>
     </section>
-    <div class="bar">${escapeHtml(formatRoomSummary(form.roomSummary))}　施 作 項 目</div>
+    <div class="bar">${escapeHtml(formatRoomSummary(form.roomSummary))} 施 作 項 目</div>
     <div class="print-items-grid">
       ${rows
         .map(printItemRowHtml)
@@ -1123,9 +1210,10 @@ function buildPrintHtml(form, rows) {
 }
 
 function App() {
-  const [form, setForm] = useState(createEmptyForm);
-  const [items, setItems] = useState([]);
-  const [categoryConfig, setCategoryConfig] = useState(BLANK_CASE_CATEGORY_CONFIG);
+  const [initialCaseState] = useState(createNewCaseState);
+  const [form, setForm] = useState(initialCaseState.form);
+  const [items, setItems] = useState(initialCaseState.items);
+  const [categoryConfig, setCategoryConfig] = useState(initialCaseState.categoryConfig);
   const [status, setStatus] = useState('');
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [customerAiPreview, setCustomerAiPreview] = useState(null);
@@ -1136,6 +1224,7 @@ function App() {
   const [draggingCategoryKey, setDraggingCategoryKey] = useState('');
   const [draggingContent, setDraggingContent] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [openSections, setOpenSections] = useState({
     survey: true,
     customer: false,
@@ -1145,9 +1234,22 @@ function App() {
   });
   const quoteRef = useRef(null);
   const textRefs = useRef({});
+  const companyTemplateInputRef = useRef(null);
+  const settingsMenuRef = useRef(null);
 
   const categoryRows = useMemo(() => buildCategoryRows(items, categoryConfig), [items, categoryConfig]);
   const enabledCategoryRows = useMemo(() => categoryRows.filter((row) => row.enabled), [categoryRows]);
+
+  useEffect(() => {
+    if (!settingsOpen) return undefined;
+    const closeOnOutsideClick = (event) => {
+      if (!settingsMenuRef.current?.contains(event.target)) {
+        setSettingsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick);
+  }, [settingsOpen]);
 
   function updateField(field, value) {
     setForm((current) => {
@@ -1216,6 +1318,20 @@ function App() {
   }
 
   function applyCleaningTemplateNow(cleaningType) {
+    const companyTemplate = getCompanyTemplateForType(cleaningType);
+    if (companyTemplate) {
+      setForm((current) => ({
+        ...current,
+        cleaningType,
+        title: companyTemplate.title || current.title || '清潔服務 估價單',
+        specialNotes: buildStandardSpecialNotes()
+      }));
+      setCategoryConfig(companyTemplate.categoryConfig);
+      setItems(companyTemplate.items);
+      setOpenSections((current) => ({ ...current, items: true, notes: true }));
+      setStatus(`已套用「${cleaningType}」公司預設範本，內容仍可手動編輯`);
+      return;
+    }
     if (cleaningType === '其他') {
       setForm((current) => ({
         ...current,
@@ -1253,40 +1369,104 @@ function App() {
     }));
   }
 
+  function saveCompanyTemplateNow() {
+    const cleaningType = form.cleaningType?.trim();
+    if (!cleaningType) {
+      setStatus('請先選擇清潔類型，再更新該類型的公司預設範本');
+      return;
+    }
+    const snapshot = createCompanyTemplateSnapshot(form, items, categoryConfig);
+    if (writeCompanyTemplateForType(cleaningType, snapshot)) {
+      setStatus(`已更新「${cleaningType}」公司預設範本，之後套用此類型會使用這份內容`);
+    } else {
+      setStatus('公司預設範本更新失敗，請稍後再試');
+    }
+  }
+
+  function updateCompanyTemplate() {
+    const cleaningType = form.cleaningType?.trim() || '目前清潔類型';
+    openConfirmDialog({
+      title: '更新公司預設範本',
+      message: `這會更新「${cleaningType}」之後套用時的公司預設範本，確定更新嗎？`,
+      confirmText: '更新公司預設範本',
+      onConfirm: saveCompanyTemplateNow
+    });
+  }
+
+  function restoreSystemTemplate() {
+    openConfirmDialog({
+      title: '恢復系統原始範本',
+      message: '這會清除本機所有公司預設範本。之後套用清潔類型會回到系統內建範本，是否繼續？',
+      confirmText: '恢復系統原始範本',
+      onConfirm: () => {
+        clearCompanyTemplates();
+        setStatus('已清除所有公司預設範本，之後套用清潔類型會使用系統原始範本');
+      }
+    });
+  }
+
+  function exportCompanyTemplate() {
+    const store = readCompanyTemplateStore() || normalizeCompanyTemplateStore({});
+    const blob = new Blob([JSON.stringify(store, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const date = todayString().replaceAll('-', '');
+    link.href = url;
+    link.download = `微笑清家公司範本-${date}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setStatus(Object.keys(store.templates || {}).length ? '已匯出公司預設範本 JSON' : '目前尚未建立公司預設範本，已匯出空白範本庫 JSON');
+  }
+
+  async function importCompanyTemplate(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const store = parsed?.templates ? normalizeCompanyTemplateStore(parsed) : normalizeCompanyTemplateStore({ templates: { [parsed.cleaningType || '匯入範本']: parsed } });
+      writeCompanyTemplateStore(store);
+      setStatus(`已匯入公司範本「${file.name}」，之後套用清潔類型會使用匯入內容`);
+    } catch (error) {
+      setStatus(`匯入公司範本失敗：${error.message || '無法讀取 JSON'}`);
+    }
+  }
+
+  function runSettingsAction(action) {
+    setSettingsOpen(false);
+    action?.();
+  }
+
+  function showComingSoon(label) {
+    setStatus(`${label} 功能已預留入口，之後可從設定選單擴充`);
+  }
+
   function resetCurrentCase() {
     openConfirmDialog({
       title: '開新案件',
-      message: '開新案件會清空目前資料，並以空白估價單覆蓋舊內容，是否繼續？',
+      message: '開新案件會清空目前資料，並回到空白估價單，不會自動套用任何範本，是否繼續？',
       confirmText: '開新案件',
       onConfirm: resetCurrentCaseNow
     });
   }
 
   function resetCurrentCaseNow() {
-    setForm(createEmptyForm());
-    setCategoryConfig(BLANK_CASE_CATEGORY_CONFIG);
-    setItems([]);
+    const nextCase = createNewCaseState();
+    setForm(nextCase.form);
+    setCategoryConfig(nextCase.categoryConfig);
+    setItems(nextCase.items);
     setOpenSections({
       survey: true,
       customer: false,
       notes: false,
-      items: false,
+      items: nextCase.items.length > 0,
       payment: false
     });
     setActiveTextTarget(null);
     setDraggingCategoryKey('');
+    setEditingContent(null);
     setStatus('已建立空白估價單');
-  }
-
-  function applyInferredFormFields(text, extraFields = {}) {
-    const inferred = inferFormFields(text);
-    const usefulFields = Object.fromEntries(Object.entries(inferred).filter(([, value]) => value));
-    setForm((current) => ({
-      ...current,
-      ...usefulFields,
-      ...extraFields
-    }));
-    return Object.keys(usefulFields).length;
   }
 
   function toggleSection(section) {
@@ -1342,14 +1522,10 @@ function App() {
   }
 
   function removeContentItem(category, contentId) {
-    updateCategoryContents(category, (contents) => contents.map((content) => (content.id === contentId ? { ...content, deleted: true } : content)));
+    updateCategoryContents(category, (contents) => contents.filter((content) => content.id !== contentId));
     setEditingContent((current) => (current?.contentId === contentId ? null : current));
+    setDraggingContent((current) => (current?.contentId === contentId ? null : current));
     setStatus('已刪除施工內容');
-  }
-
-  function restoreContentItem(category, contentId) {
-    updateCategoryContents(category, (contents) => contents.map((content) => (content.id === contentId ? { ...content, deleted: false, enabled: true } : content)));
-    setStatus('已恢復施工內容');
   }
 
   function toggleContentRed(category, contentId) {
@@ -1358,6 +1534,17 @@ function App() {
 
   function toggleContentStrike(category, contentId) {
     updateCategoryContents(category, (contents) => contents.map((content) => (content.id === contentId ? { ...content, strike: !content.strike } : content)));
+  }
+
+  function toggleContentScope(category, contentId, scopeKey) {
+    updateCategoryContents(category, (contents) =>
+      contents.map((content) => {
+        if (content.id !== contentId || !supportsInnerOuterScope(content)) return content;
+        const currentScope = normalizedScope(content.scope);
+        const nextScope = { ...currentScope, [scopeKey]: !currentScope[scopeKey] };
+        return { ...content, scope: normalizedScope(nextScope) };
+      })
+    );
   }
 
   function moveContentItem(category, sourceId, targetId) {
@@ -1390,8 +1577,9 @@ function App() {
   function renderContentEditor(row, content) {
     const isEditing = editingContent?.category === row.key && editingContent?.contentId === content.id;
     const isParagraph = content.type === 'paragraph';
-    const isDeleted = content.deleted;
-    const isDisabled = isDeleted || content.enabled === false;
+    const isDisabled = content.enabled === false;
+    const hasScopeToggle = supportsInnerOuterScope(content);
+    const contentScope = normalizedScope(content.scope);
     return (
       <span
         key={content.id}
@@ -1413,7 +1601,7 @@ function App() {
           setDraggingContent(null);
         }}
         className={`group relative inline-flex max-w-full cursor-grab items-start gap-1 border text-[13px] leading-5 transition active:cursor-grabbing ${
-          isParagraph ? 'w-full rounded-md px-3 py-2 pr-24' : 'rounded-full px-2.5 py-1 pr-20'
+          isParagraph ? 'w-full rounded-md px-3 py-2 pr-24' : `rounded-full px-2.5 py-1 ${hasScopeToggle ? 'pr-36' : 'pr-20'}`
         } ${
           isDisabled
             ? 'border-stone-200 bg-stone-100 text-stone-400'
@@ -1454,10 +1642,6 @@ function App() {
           <button
             type="button"
             onClick={() => {
-              if (content.deleted) {
-                restoreContentItem(row.key, content.id);
-                return;
-              }
               toggleContentItem(row.key, content.id);
             }}
             onDoubleClick={(event) => {
@@ -1470,6 +1654,34 @@ function App() {
           >
             {content.text}
           </button>
+        )}
+        {!isEditing && hasScopeToggle && (
+          <span className="absolute right-20 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5">
+            {[
+              ['inner', '內'],
+              ['outer', '外']
+            ].map(([scopeKey, label]) => {
+              const active = contentScope[scopeKey];
+              return (
+                <button
+                  key={scopeKey}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    toggleContentScope(row.key, content.id, scopeKey);
+                  }}
+                  className={`rounded-full border px-1.5 py-0.5 text-[10px] font-bold leading-none transition ${
+                    active
+                      ? 'border-moss-600 bg-moss-700 text-white'
+                      : 'border-stone-300 bg-white text-stone-400 hover:bg-stone-50'
+                  }`}
+                  title={`${label}側施作`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </span>
         )}
         <span className={`absolute ${isParagraph ? 'right-2 top-2' : 'right-5 top-1/2 -translate-y-1/2'} inline-flex items-center gap-1`}>
           <button
@@ -1495,33 +1707,18 @@ function App() {
             線
           </button>
         </span>
-        {isDisabled ? (
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              restoreContentItem(row.key, content.id);
-            }}
-            className="absolute -right-1 -top-1 rounded-full border border-moss-100 bg-white px-1.5 py-0.5 text-[10px] font-bold text-moss-700 shadow-sm transition hover:bg-moss-50"
-            title="恢復此內容"
-            aria-label="恢復此內容"
-          >
-            復
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              removeContentItem(row.key, content.id);
-            }}
-            className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-red-100 bg-white text-red-500 shadow-sm transition hover:bg-red-50"
-            title="刪除此內容"
-            aria-label="刪除此內容"
-          >
-            <X size={10} />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            removeContentItem(row.key, content.id);
+          }}
+          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-red-100 bg-white text-red-500 shadow-sm transition hover:bg-red-50"
+          title="刪除此內容"
+          aria-label="刪除此內容"
+        >
+          <X size={10} />
+        </button>
       </span>
     );
   }
@@ -1565,10 +1762,6 @@ function App() {
 
   function rememberTextTarget(type, key, node = null, rich = false) {
     setActiveTextTarget({ type, key, node, rich });
-  }
-
-  function setTextRef(id, node) {
-    if (node) textRefs.current[id] = node;
   }
 
   function handleRichEditorActivate(editorId, node) {
@@ -1788,46 +1981,6 @@ function App() {
     setAiSupplementPreview(null);
     setOpenSections((current) => ({ ...current, items: true }));
     setStatus(addedCount ? `已套用 ${addedCount} 筆補充內容到施工項目` : '沒有新增內容，可能已存在相同項目');
-  }
-
-  async function organizeTextContent(text, mode = 'manual') {
-    previewSupplementContent(text, mode);
-    return;
-
-    if (!text.trim()) {
-      setStatus('尚未偵測到可解析的 LINE 補充內容');
-      return;
-    }
-
-    const inferredCount = applyInferredFormFields(text);
-    setIsOrganizing(true);
-    setStatus(mode === 'paste' ? '已偵測貼上內容，正在解析補充內容...' : '正在解析補充內容...');
-    try {
-      const response = await fetch('/api/organize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, categories: CATEGORIES })
-      });
-      if (!response.ok) throw new Error('AI API unavailable');
-      const data = await response.json();
-      const addedCount = appendSupplementRows(sanitizeAiRows(data.items));
-      setOpenSections((current) => ({ ...current, items: true }));
-      setStatus(
-        addedCount
-          ? `已解析補充內容：新增 ${addedCount} 個項目，並套入 ${inferredCount} 個客戶資料欄位`
-          : `已解析補充內容，沒有新增重複項目；套入 ${inferredCount} 個客戶資料欄位`
-      );
-    } catch {
-      const addedCount = appendSupplementRows(localOrganize(text));
-      setOpenSections((current) => ({ ...current, items: true }));
-      setStatus(
-        addedCount
-          ? `已用本機規則新增 ${addedCount} 個 LINE 補充項目，並套入 ${inferredCount} 個客戶資料欄位`
-          : `已解析補充內容，沒有新增重複項目；若要提升準確度，請完成 API Key 設定`
-      );
-    } finally {
-      setIsOrganizing(false);
-    }
   }
 
   async function parseLineSupplements() {
@@ -2065,13 +2218,89 @@ function App() {
     <main className="min-h-screen bg-[#eef3ea] text-stone-900">
       <div className="mx-auto flex max-w-[1760px] flex-col gap-5 px-4 py-5 lg:h-screen lg:flex-row lg:overflow-hidden">
         <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[#d9e2d2] bg-white shadow-soft">
-          <div className="relative overflow-hidden border-b border-[#dbe4d5] bg-gradient-to-r from-white to-[#f4f8f0] px-5 py-4">
+          <div className="relative overflow-visible border-b border-[#dbe4d5] bg-gradient-to-r from-white to-[#f4f8f0] px-5 py-4">
             <div className="pointer-events-none absolute right-5 top-4 opacity-90" aria-hidden="true">
               <img className="kitty-mini" src="/assets/hello-kitty-accent.png" alt="" />
             </div>
             <div className="pr-24">
               <p className="text-xs font-bold uppercase text-moss-700">Professional site survey quotation</p>
-              <h1 className="mt-1 text-2xl font-bold tracking-normal text-stone-950">場勘報價清單產生器</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-normal text-stone-950">場勘報價清單產生器</h1>
+                <div ref={settingsMenuRef} className="relative z-30 inline-flex">
+                  <button
+                    type="button"
+                    onClick={() => setSettingsOpen((current) => !current)}
+                    className={`daisy-settings-button flex h-9 w-9 items-center justify-center rounded-full border border-[#c8d9bd] bg-white text-moss-800 shadow-sm transition hover:bg-moss-50 hover:text-moss-900 ${settingsOpen ? 'is-open' : ''}`}
+                    aria-label="設定"
+                    title="設定"
+                  >
+                    {renderDaisySettingsIcon()}
+                  </button>
+                  {settingsOpen && (
+                    <div className="absolute left-0 top-full mt-2 w-72 overflow-hidden rounded-lg border border-[#c8d9bd] bg-white shadow-[0_18px_55px_rgba(35,55,31,0.2)]">
+                      <div className="px-3 py-2 text-xs font-black uppercase tracking-wide text-moss-700">📁 個案管理</div>
+                      <div className="h-px bg-[#e4ecdd]" />
+                      <button
+                        type="button"
+                        onClick={() => runSettingsAction(updateCompanyTemplate)}
+                        className="flex w-full items-center px-3 py-2.5 text-left text-sm font-semibold text-stone-800 transition hover:bg-moss-50"
+                      >
+                        💾 更新公司預設範本
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSettingsOpen(false);
+                          companyTemplateInputRef.current?.click();
+                        }}
+                        className="flex w-full items-center px-3 py-2.5 text-left text-sm font-semibold text-stone-800 transition hover:bg-moss-50"
+                      >
+                        📥 匯入公司預設範本
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => runSettingsAction(exportCompanyTemplate)}
+                        className="flex w-full items-center px-3 py-2.5 text-left text-sm font-semibold text-stone-800 transition hover:bg-moss-50"
+                      >
+                        📤 匯出公司預設範本
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => runSettingsAction(restoreSystemTemplate)}
+                        className="flex w-full items-center px-3 py-2.5 text-left text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                      >
+                        ↩ 恢復系統原始範本
+                      </button>
+                      <div className="h-px bg-[#e4ecdd]" />
+                      {['🏢 公司資料設定', '🖼 Logo／QR Code 設定', '🎨 PDF 樣式設定'].map((label) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => runSettingsAction(() => showComingSoon(label.replace(/^[^ ]+\s*/, '')))}
+                          className="flex w-full items-center px-3 py-2.5 text-left text-sm font-semibold text-stone-700 transition hover:bg-moss-50"
+                        >
+                          {label}
+                        </button>
+                      ))}
+                      <div className="h-px bg-[#e4ecdd]" />
+                      <button
+                        type="button"
+                        onClick={() => runSettingsAction(() => setStatus('系統版本：0.1.0'))}
+                        className="flex w-full items-center px-3 py-2.5 text-left text-sm font-semibold text-stone-700 transition hover:bg-moss-50"
+                      >
+                        ℹ 系統版本
+                      </button>
+                      <input
+                        ref={companyTemplateInputRef}
+                        type="file"
+                        accept="application/json,.json"
+                        onChange={importCompanyTemplate}
+                        className="hidden"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
               <p className="mt-2 text-sm leading-6 text-stone-600">
                 先套用清潔範本，再將 LINE 對話解析為補充項目，產出可供客戶確認的正式估價單內容。
               </p>
@@ -2366,7 +2595,7 @@ function App() {
                         moveCategoryRow(draggingCategoryKey || event.dataTransfer.getData('text/plain'), row.key);
                         setDraggingCategoryKey('');
                       }}
-                      className={`grid gap-2 rounded-md border p-2 transition md:grid-cols-[128px_1fr_40px] ${
+                      className={`grid gap-2 rounded-md border p-2 transition md:grid-cols-[128px_minmax(0,1fr)_40px] ${
                         draggingCategoryKey === row.key
                           ? 'border-moss-600 bg-moss-50 opacity-60'
                           : 'border-[#edf2e8] bg-[#fbfdf8]'
@@ -2389,10 +2618,11 @@ function App() {
                           className="h-9 w-full rounded-md border border-[#cfd8c8] bg-white px-2 text-sm font-bold text-moss-700 outline-none transition focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
                         />
                       </span>
-                      <div className="rounded-md border border-[#cfd8c8] bg-[#fffefb] p-3">
+                      <div className="min-w-0 rounded-md border border-[#cfd8c8] bg-[#fffefb] p-3">
                         {(() => {
-                          const tagContents = row.contents.filter((content) => content.type !== 'paragraph');
-                          const paragraphContents = row.contents.filter((content) => content.type === 'paragraph');
+                          const visibleContents = row.contents.filter((content) => !content.deleted);
+                          const tagContents = visibleContents.filter((content) => content.type !== 'paragraph');
+                          const paragraphContents = visibleContents.filter((content) => content.type === 'paragraph');
                           const hasParagraphSection = LONG_CONTENT_CATEGORIES.has(row.area);
                           return (
                             <>
@@ -2438,7 +2668,7 @@ function App() {
                           );
                         })()}
                       </div>
-                      <div className="flex gap-1 md:flex-col">
+                      <div className="flex shrink-0 justify-end gap-1 md:w-10 md:flex-col md:items-stretch">
                         <div
                           draggable
                           onDragStart={(event) => {
@@ -2734,7 +2964,7 @@ function App() {
               </section>
 
               <div className="quote-items-title-bar border-y border-[#1e2d1b] bg-[#548436] px-4 py-2.5 text-center text-2xl font-semibold tracking-[0.18em] text-white" style={quoteItemsLayoutStyle}>
-                {formatRoomSummary(form.roomSummary)}　施 作 項 目
+                {formatRoomSummary(form.roomSummary)} 施 作 項 目
               </div>
 
               <div className="quote-items-grid" style={quoteItemsLayoutStyle}>

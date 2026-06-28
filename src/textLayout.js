@@ -1,5 +1,4 @@
 const DEFAULT_PUNCTUATION_ORDER = ['。', '；', '、', '，'];
-const DEFAULT_READABLE_WRAP_CHARS = 38;
 const DEFAULT_BULLET_CONTINUATION_INDENT = '   ';
 
 function visibleLength(text) {
@@ -30,15 +29,6 @@ function splitByPreferredPunctuation(text) {
     if (part) merged.push(part);
     return merged;
   }, []);
-}
-
-function hardSplitReadable(text, maxChars) {
-  const chars = Array.from(String(text || ''));
-  const chunks = [];
-  for (let index = 0; index < chars.length; index += maxChars) {
-    chunks.push(chars.slice(index, index + maxChars).join(''));
-  }
-  return chunks;
 }
 
 function splitByMeasuredWidth(text, measure, maxWidth) {
@@ -101,50 +91,7 @@ export function wrapReadableTextByWidth(text, options = {}) {
   });
 }
 
-export function wrapReadableText(text, options = {}) {
-  const maxChars = Math.max(12, options.maxChars || DEFAULT_READABLE_WRAP_CHARS);
-  const continuationIndent = options.continuationIndent ?? DEFAULT_BULLET_CONTINUATION_INDENT;
-  const lines = String(text || '').replace(/\r/g, '').split('\n');
-
-  return lines.flatMap((rawLine) => {
-    const line = rawLine.trim();
-    if (!line) return [''];
-
-    const bulletMatch = line.match(/^([•*]\s*)/);
-    const firstPrefix = bulletMatch ? '• ' : '';
-    const nextPrefix = bulletMatch ? continuationIndent : '';
-    const body = bulletMatch ? line.replace(/^([•*]\s*)/, '').trim() : line;
-    const limit = Math.max(8, maxChars - visibleLength(firstPrefix));
-    const continuationLimit = Math.max(8, maxChars - visibleLength(nextPrefix));
-    const segments = splitByPreferredPunctuation(body);
-    const output = [];
-    let current = '';
-
-    segments.forEach((segment) => {
-      const activeLimit = output.length ? continuationLimit : limit;
-      const candidate = `${current}${segment}`;
-      if (!current || visibleLength(candidate) <= activeLimit) {
-        current = candidate;
-        return;
-      }
-
-      output.push(current);
-      if (visibleLength(segment) <= continuationLimit) {
-        current = segment;
-        return;
-      }
-
-      const split = hardSplitReadable(segment, continuationLimit);
-      output.push(...split.slice(0, -1));
-      current = split.at(-1) || '';
-    });
-
-    if (current) output.push(current);
-    return output.map((part, index) => `${index === 0 ? firstPrefix : nextPrefix}${part}`);
-  });
-}
-
-export function formatParagraphForOutput(text, options = {}) {
+export function formatParagraphForOutput(text) {
   const clean = String(text || '')
     .replace(/^\s*[•*]\s*/, '')
     .trim();
