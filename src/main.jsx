@@ -675,9 +675,36 @@ function listSavedCases() {
   return Object.values(store.cases || {}).sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
 }
 
+function normalizeSavedCaseStore(rawStore) {
+  const rawCases = Array.isArray(rawStore)
+    ? Object.fromEntries(rawStore.filter((item) => item?.id).map((item) => [item.id, item]))
+    : rawStore?.cases && typeof rawStore.cases === 'object'
+      ? rawStore.cases
+      : {};
+  const cases = Object.fromEntries(
+    Object.entries(rawCases)
+      .filter(([, savedCase]) => savedCase && typeof savedCase === 'object')
+      .map(([caseId, savedCase]) => {
+        const id = savedCase.id || caseId;
+        return [
+          id,
+          {
+            id,
+            name: savedCase.name || '未命名案件',
+            savedAt: savedCase.savedAt || new Date().toISOString(),
+            form: { ...createEmptyForm(), ...(savedCase.form || {}) },
+            categoryConfig: cloneCategoryConfig(savedCase.categoryConfig || DEFAULT_CATEGORY_CONFIG),
+            items: cloneTemplateItems(savedCase.items || [])
+          }
+        ];
+      })
+  );
+  return { version: 1, cases };
+}
+
 function writeSavedCaseStore(store) {
   if (typeof window === 'undefined') return false;
-  window.localStorage.setItem(CASE_STORAGE_KEY, JSON.stringify({ version: 1, cases: store.cases || {} }, null, 2));
+  window.localStorage.setItem(CASE_STORAGE_KEY, JSON.stringify(normalizeSavedCaseStore(store), null, 2));
   return true;
 }
 
@@ -1340,6 +1367,7 @@ function App() {
   const quoteRef = useRef(null);
   const textRefs = useRef({});
   const companyTemplateInputRef = useRef(null);
+  const caseImportInputRef = useRef(null);
   const settingsMenuRef = useRef(null);
   const caseMenuRef = useRef(null);
 
@@ -1470,6 +1498,47 @@ function App() {
         setStatus(`已刪除案件：${caseName || '未命名案件'}`);
       }
     });
+  }
+
+  function exportSavedCases() {
+    const store = readSavedCaseStore();
+    const normalizedStore = normalizeSavedCaseStore(store);
+    const blob = new Blob([JSON.stringify(normalizedStore, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const date = todayString().replaceAll('-', '');
+    link.href = url;
+    link.download = `微笑清家個案資料-${date}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setCaseMenuOpen(false);
+    setStatus(Object.keys(normalizedStore.cases || {}).length ? '已匯出個案資料 JSON' : '目前尚未儲存個案，已匯出空白個案資料 JSON');
+  }
+
+  async function importSavedCases(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const store = normalizeSavedCaseStore(parsed);
+      openConfirmDialog({
+        title: '匯入個案資料',
+        message: `這會覆蓋目前本機個案管理中的 ${savedCases.length} 筆案件，改為匯入「${file.name}」中的 ${Object.keys(store.cases || {}).length} 筆案件，是否繼續？`,
+        confirmText: '匯入個案資料',
+        onConfirm: () => {
+          writeSavedCaseStore(store);
+          setSavedCases(listSavedCases());
+          setCurrentCaseId('');
+          setLastSavedAt('');
+          setCaseMenuOpen(false);
+          setStatus(`已匯入個案資料「${file.name}」`);
+        }
+      });
+    } catch (error) {
+      setStatus(`匯入個案資料失敗：${error.message || '無法讀取 JSON'}`);
+    }
   }
 
   function applyCleaningTemplate(cleaningType) {
@@ -2419,6 +2488,29 @@ function App() {
                       <div className="flex items-center justify-between border-b border-[#e4ecdd] px-3 py-2">
                         <span className="text-xs font-black uppercase tracking-wide text-moss-700">📁 個案管理</span>
                         <span className="text-[11px] font-bold text-stone-500">{savedCases.length} 筆</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 border-b border-[#e4ecdd] p-2">
+                        <button
+                          type="button"
+                          onClick={() => caseImportInputRef.current?.click()}
+                          className="rounded-md border border-[#c8d9bd] bg-white px-3 py-2 text-xs font-black text-moss-800 transition hover:bg-moss-50"
+                        >
+                          📥 匯入個案
+                        </button>
+                        <button
+                          type="button"
+                          onClick={exportSavedCases}
+                          className="rounded-md border border-[#c8d9bd] bg-white px-3 py-2 text-xs font-black text-moss-800 transition hover:bg-moss-50"
+                        >
+                          📤 匯出個案
+                        </button>
+                        <input
+                          ref={caseImportInputRef}
+                          type="file"
+                          accept="application/json,.json"
+                          onChange={importSavedCases}
+                          className="hidden"
+                        />
                       </div>
                       {savedCases.length ? (
                         <div className="max-h-80 overflow-auto p-2">
