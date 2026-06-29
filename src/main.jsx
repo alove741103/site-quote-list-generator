@@ -1499,7 +1499,7 @@ function App() {
       setCategoryConfig(companyTemplate.categoryConfig);
       setItems(companyTemplate.items);
       setOpenSections((current) => ({ ...current, items: true, notes: true }));
-      setStatus(`已套用「${cleaningType}」公司預設範本，內容仍可手動編輯`);
+      setStatus(`已套用「${cleaningType}」公司施工範本，內容仍可手動編輯`);
       return;
     }
     if (cleaningType === '其他') {
@@ -1542,23 +1542,23 @@ function App() {
   function saveCompanyTemplateNow() {
     const cleaningType = form.cleaningType?.trim();
     if (!cleaningType) {
-      setStatus('請先選擇清潔類型，再更新該類型的公司預設範本');
+      setStatus('請先選擇清潔類型，再更新該類型的公司施工範本');
       return;
     }
     const snapshot = createCompanyTemplateSnapshot(form, items, categoryConfig);
     if (writeCompanyTemplateForType(cleaningType, snapshot)) {
-      setStatus(`已更新「${cleaningType}」公司預設範本，之後套用此類型會使用這份內容`);
+      setStatus(`已更新「${cleaningType}」公司施工範本，之後套用此類型會使用這份內容`);
     } else {
-      setStatus('公司預設範本更新失敗，請稍後再試');
+      setStatus('公司施工範本更新失敗，請稍後再試');
     }
   }
 
   function updateCompanyTemplate() {
     const cleaningType = form.cleaningType?.trim() || '目前清潔類型';
     openConfirmDialog({
-      title: '更新公司預設範本',
-      message: `這會更新「${cleaningType}」之後套用時的公司預設範本，確定更新嗎？`,
-      confirmText: '更新公司預設範本',
+      title: '更新公司施工範本',
+      message: `這會更新「${cleaningType}」之後套用時的公司施工範本，確定更新嗎？`,
+      confirmText: '更新公司施工範本',
       onConfirm: saveCompanyTemplateNow
     });
   }
@@ -1566,11 +1566,11 @@ function App() {
   function restoreSystemTemplate() {
     openConfirmDialog({
       title: '恢復系統原始範本',
-      message: '這會清除本機所有公司預設範本。之後套用清潔類型會回到系統內建範本，是否繼續？',
+      message: '這會清除本機所有公司施工範本。之後套用清潔類型會回到系統內建範本，是否繼續？',
       confirmText: '恢復系統原始範本',
       onConfirm: () => {
         clearCompanyTemplates();
-        setStatus('已清除所有公司預設範本，之後套用清潔類型會使用系統原始範本');
+        setStatus('已清除所有公司施工範本，之後套用清潔類型會使用系統原始範本');
       }
     });
   }
@@ -1582,10 +1582,10 @@ function App() {
     const link = document.createElement('a');
     const date = todayString().replaceAll('-', '');
     link.href = url;
-    link.download = `微笑清家公司範本-${date}.json`;
+    link.download = `微笑清家公司施工範本-${date}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    setStatus(Object.keys(store.templates || {}).length ? '已匯出公司預設範本 JSON' : '目前尚未建立公司預設範本，已匯出空白範本庫 JSON');
+    setStatus(Object.keys(store.templates || {}).length ? '已匯出公司施工範本 JSON' : '目前尚未建立公司施工範本，已匯出空白範本庫 JSON');
   }
 
   async function importCompanyTemplate(event) {
@@ -1597,9 +1597,9 @@ function App() {
       const parsed = JSON.parse(text);
       const store = parsed?.templates ? normalizeCompanyTemplateStore(parsed) : normalizeCompanyTemplateStore({ templates: { [parsed.cleaningType || '匯入範本']: parsed } });
       writeCompanyTemplateStore(store);
-      setStatus(`已匯入公司範本「${file.name}」，之後套用清潔類型會使用匯入內容`);
+      setStatus(`已匯入公司施工範本「${file.name}」，之後套用清潔類型會使用匯入內容`);
     } catch (error) {
-      setStatus(`匯入公司範本失敗：${error.message || '無法讀取 JSON'}`);
+      setStatus(`匯入公司施工範本失敗：${error.message || '無法讀取 JSON'}`);
     }
   }
 
@@ -2485,14 +2485,14 @@ function App() {
                   </button>
                   {settingsOpen && (
                     <div className="absolute left-0 top-full mt-2 w-72 overflow-hidden rounded-lg border border-[#c8d9bd] bg-white shadow-[0_18px_55px_rgba(35,55,31,0.2)]">
-                      <div className="px-3 py-2 text-xs font-black uppercase tracking-wide text-moss-700">公司預設範本</div>
+                      <div className="px-3 py-2 text-xs font-black uppercase tracking-wide text-moss-700">公司施工範本</div>
                       <div className="h-px bg-[#e4ecdd]" />
                       <button
                         type="button"
                         onClick={() => runSettingsAction(updateCompanyTemplate)}
                         className="flex w-full items-center px-3 py-2.5 text-left text-sm font-semibold text-stone-800 transition hover:bg-moss-50"
                       >
-                        💾 更新公司預設範本
+                        💾 更新公司施工範本
                       </button>
                       <button
                         type="button"
@@ -2502,14 +2502,14 @@ function App() {
                         }}
                         className="flex w-full items-center px-3 py-2.5 text-left text-sm font-semibold text-stone-800 transition hover:bg-moss-50"
                       >
-                        📥 匯入公司預設範本
+                        📥 匯入公司施工範本
                       </button>
                       <button
                         type="button"
                         onClick={() => runSettingsAction(exportCompanyTemplate)}
                         className="flex w-full items-center px-3 py-2.5 text-left text-sm font-semibold text-stone-800 transition hover:bg-moss-50"
                       >
-                        📤 匯出公司預設範本
+                        📤 匯出公司施工範本
                       </button>
                       <button
                         type="button"
