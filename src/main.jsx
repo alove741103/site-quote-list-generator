@@ -536,6 +536,7 @@ function otherTemplateItemsToRows() {
 
 const COMPANY_TEMPLATE_STORAGE_KEY = 'meant2clean.companyTemplates.v2';
 const LEGACY_COMPANY_TEMPLATE_STORAGE_KEY = 'meant2clean.companyDefaultTemplate.v1';
+const CASE_STORAGE_KEY = 'meant2clean.savedCases.v1';
 
 function cloneCategoryConfig(categoryConfig = []) {
   return categoryConfig.map((category) => ({
@@ -655,6 +656,55 @@ function clearCompanyTemplates() {
   window.localStorage.removeItem(LEGACY_COMPANY_TEMPLATE_STORAGE_KEY);
 }
 
+function readSavedCaseStore() {
+  if (typeof window === 'undefined') return { version: 1, cases: {} };
+  try {
+    const raw = window.localStorage.getItem(CASE_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return {
+      version: 1,
+      cases: parsed?.cases && typeof parsed.cases === 'object' ? parsed.cases : {}
+    };
+  } catch {
+    return { version: 1, cases: {} };
+  }
+}
+
+function listSavedCases() {
+  const store = readSavedCaseStore();
+  return Object.values(store.cases || {}).sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
+}
+
+function writeSavedCaseStore(store) {
+  if (typeof window === 'undefined') return false;
+  window.localStorage.setItem(CASE_STORAGE_KEY, JSON.stringify({ version: 1, cases: store.cases || {} }, null, 2));
+  return true;
+}
+
+function caseDateForName(form) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(form.serviceDate || '')) return form.serviceDate;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(form.quoteDate || '')) return form.quoteDate;
+  return todayString();
+}
+
+function createCaseName(form) {
+  const customerLabel = stripColorTags(form.contact || form.company || '').trim();
+  return [caseDateForName(form), stripColorTags(form.building || '').trim(), customerLabel]
+    .filter(Boolean)
+    .join('｜');
+}
+
+function createCaseSnapshot({ id, name, form, items, categoryConfig, savedAt }) {
+  return {
+    id,
+    name,
+    savedAt,
+    form,
+    categoryConfig: cloneCategoryConfig(categoryConfig),
+    items: cloneTemplateItems(items)
+  };
+}
+
 function createNewCaseState() {
   return {
     form: createEmptyForm(),
@@ -723,6 +773,8 @@ const emptyForm = {
   quoteDate: todayString(),
   validUntil: dateOffsetString(3),
   serviceDate: '待訂',
+  serviceStartTime: '',
+  serviceEndTime: '',
   paymentCondition: '匯款',
   paymentConditionOther: '',
   paymentDeadline: '施作完畢後付款，匯費勿內扣。',
@@ -747,7 +799,9 @@ function createEmptyForm() {
     ...emptyForm,
     quoteDate: todayString(),
     validUntil: dateOffsetString(3),
-    serviceDate: '待訂'
+    serviceDate: '待訂',
+    serviceStartTime: '',
+    serviceEndTime: ''
   };
 }
 
@@ -1084,6 +1138,53 @@ function buildPlainText(form, rows) {
   ].join('\n');
 }
 
+function googleCalendarDate(dateValue, fallbackTime) {
+  const dateMatch = String(dateValue || '').match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!dateMatch) return '';
+  return `${dateMatch[1]}${dateMatch[2]}${dateMatch[3]}T${fallbackTime.replace(':', '')}00`;
+}
+
+function buildGoogleCalendarEventUrl(form, rows) {
+  const startDate = googleCalendarDate(form.serviceDate, form.serviceStartTime || '09:00');
+  const endDate = googleCalendarDate(form.serviceDate, form.serviceEndTime || '17:00');
+
+  const customerName = stripColorTags(form.contact || form.company || form.building || '客戶');
+  const cleaningType = stripColorTags(form.cleaningType || '清潔服務');
+  const constructionLines = rows
+    .map((row) => {
+      const detail = stripColorTags(row.detail || '').trim();
+      return detail ? `${row.number}. ${row.area}：${detail}` : `${row.number}. ${row.area}`;
+    })
+    .join('\n');
+  const noteLines = rows
+    .filter((row) => row.area === '注意事項' || row.key === '注意事項')
+    .map((row) => stripColorTags(row.detail || '').trim())
+    .filter(Boolean)
+    .join('\n');
+
+  const details = [
+    `👤 客戶：\n${stripColorTags(form.contact || '') || '待確認'}`,
+    `📞 電話：\n${stripColorTags(form.phone || '') || '待確認'}`,
+    `🏢 社區：\n${stripColorTags(form.building || '') || '待確認'}`,
+    `🏠 型態：\n${cleaningType}`,
+    `📋 施工項目：\n${constructionLines || '待確認'}`,
+    `📝 注意事項：\n${noteLines || '待確認'}`,
+    '----------------'
+  ].join('\n\n');
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `🧹 微笑清家｜${customerName}｜${cleaningType}`,
+    location: stripColorTags(form.address || ''),
+    details
+  });
+  if (startDate && endDate) {
+    params.set('dates', `${startDate}/${endDate}`);
+  }
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 function decodePdfImportText(encoded) {
   const binary = atob(encoded.replace(/\s+/g, ''));
   const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
@@ -1225,6 +1326,10 @@ function App() {
   const [draggingContent, setDraggingContent] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [caseMenuOpen, setCaseMenuOpen] = useState(false);
+  const [savedCases, setSavedCases] = useState(() => listSavedCases());
+  const [currentCaseId, setCurrentCaseId] = useState('');
+  const [lastSavedAt, setLastSavedAt] = useState('');
   const [openSections, setOpenSections] = useState({
     survey: true,
     customer: false,
@@ -1236,6 +1341,7 @@ function App() {
   const textRefs = useRef({});
   const companyTemplateInputRef = useRef(null);
   const settingsMenuRef = useRef(null);
+  const caseMenuRef = useRef(null);
 
   const categoryRows = useMemo(() => buildCategoryRows(items, categoryConfig), [items, categoryConfig]);
   const enabledCategoryRows = useMemo(() => categoryRows.filter((row) => row.enabled), [categoryRows]);
@@ -1250,6 +1356,17 @@ function App() {
     document.addEventListener('mousedown', closeOnOutsideClick);
     return () => document.removeEventListener('mousedown', closeOnOutsideClick);
   }, [settingsOpen]);
+
+  useEffect(() => {
+    if (!caseMenuOpen) return undefined;
+    const closeOnOutsideClick = (event) => {
+      if (!caseMenuRef.current?.contains(event.target)) {
+        setCaseMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick);
+  }, [caseMenuOpen]);
 
   function updateField(field, value) {
     setForm((current) => {
@@ -1300,6 +1417,59 @@ function App() {
     const action = confirmDialog?.onConfirm;
     setConfirmDialog(null);
     action?.();
+  }
+
+  function saveCurrentCase() {
+    const now = new Date();
+    const savedAt = now.toISOString();
+    const nextCaseId = currentCaseId || `case-${now.getTime()}`;
+    const store = readSavedCaseStore();
+    const caseName = createCaseName(form);
+    const snapshot = createCaseSnapshot({
+      id: nextCaseId,
+      name: caseName,
+      form,
+      items,
+      categoryConfig,
+      savedAt
+    });
+    if (writeSavedCaseStore({ version: 1, cases: { ...store.cases, [nextCaseId]: snapshot } })) {
+      setCurrentCaseId(nextCaseId);
+      setLastSavedAt(savedAt);
+      setSavedCases(listSavedCases());
+      setStatus(`✔ 已儲存｜最後儲存時間：${now.toLocaleString('zh-TW', { hour12: false })}`);
+    }
+  }
+
+  function loadSavedCase(savedCase) {
+    if (!savedCase) return;
+    setForm({ ...createEmptyForm(), ...(savedCase.form || {}) });
+    setItems(cloneTemplateItems(savedCase.items || []));
+    setCategoryConfig(cloneCategoryConfig(savedCase.categoryConfig || DEFAULT_CATEGORY_CONFIG));
+    setCurrentCaseId(savedCase.id || '');
+    setLastSavedAt(savedCase.savedAt || '');
+    setCaseMenuOpen(false);
+    setStatus(`已開啟案件：${savedCase.name || '未命名案件'}`);
+  }
+
+  function deleteSavedCase(caseId, caseName) {
+    openConfirmDialog({
+      title: '刪除案件',
+      message: `確定刪除「${caseName || '未命名案件'}」嗎？`,
+      confirmText: '刪除',
+      onConfirm: () => {
+        const store = readSavedCaseStore();
+        const nextCases = { ...(store.cases || {}) };
+        delete nextCases[caseId];
+        writeSavedCaseStore({ version: 1, cases: nextCases });
+        if (currentCaseId === caseId) {
+          setCurrentCaseId('');
+          setLastSavedAt('');
+        }
+        setSavedCases(listSavedCases());
+        setStatus(`已刪除案件：${caseName || '未命名案件'}`);
+      }
+    });
   }
 
   function applyCleaningTemplate(cleaningType) {
@@ -1466,7 +1636,15 @@ function App() {
     setActiveTextTarget(null);
     setDraggingCategoryKey('');
     setEditingContent(null);
+    setCurrentCaseId('');
+    setLastSavedAt('');
     setStatus('已建立空白估價單');
+  }
+
+  function addToGoogleCalendar() {
+    const calendarUrl = buildGoogleCalendarEventUrl(form, enabledCategoryRows);
+    window.open(calendarUrl, '_blank', 'noopener,noreferrer');
+    setStatus(/^\d{4}-\d{2}-\d{2}$/.test(form.serviceDate || '') ? '已開啟 Google 行事曆建立事件' : '已開啟 Google 行事曆，請在 Google 畫面選擇日期');
   }
 
   function toggleSection(section) {
@@ -2226,6 +2404,75 @@ function App() {
               <p className="text-xs font-bold uppercase text-moss-700">Professional site survey quotation</p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-bold tracking-normal text-stone-950">場勘報價清單產生器</h1>
+                <div ref={caseMenuRef} className="relative z-30 inline-flex">
+                  <button
+                    type="button"
+                    onClick={() => setCaseMenuOpen((current) => !current)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-[#c8d9bd] bg-white text-lg text-moss-800 shadow-sm transition hover:bg-moss-50 hover:text-moss-900"
+                    aria-label="個案管理"
+                    title="個案管理"
+                  >
+                    📁
+                  </button>
+                  {caseMenuOpen && (
+                    <div className="absolute left-0 top-full mt-2 w-80 overflow-hidden rounded-lg border border-[#c8d9bd] bg-white shadow-[0_18px_55px_rgba(35,55,31,0.2)]">
+                      <div className="flex items-center justify-between border-b border-[#e4ecdd] px-3 py-2">
+                        <span className="text-xs font-black uppercase tracking-wide text-moss-700">📁 個案管理</span>
+                        <span className="text-[11px] font-bold text-stone-500">{savedCases.length} 筆</span>
+                      </div>
+                      {savedCases.length ? (
+                        <div className="max-h-80 overflow-auto p-2">
+                          {savedCases.map((savedCase) => (
+                            <div
+                              key={savedCase.id}
+                              className={`mb-2 rounded-md border p-2 last:mb-0 ${
+                                currentCaseId === savedCase.id
+                                  ? 'border-moss-600 bg-[#edf7e6]'
+                                  : 'border-[#dfe8d8] bg-white'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => loadSavedCase(savedCase)}
+                                className="block w-full text-left"
+                              >
+                                <span className="block text-sm font-black text-stone-900">{savedCase.name || '未命名案件'}</span>
+                                <span className="mt-1 block text-xs leading-5 text-stone-500">
+                                  最後儲存：{savedCase.savedAt ? new Date(savedCase.savedAt).toLocaleString('zh-TW', { hour12: false }) : '未記錄'}
+                                </span>
+                              </button>
+                              <div className="mt-2 flex items-center justify-between">
+                                <span className="text-[11px] font-bold text-moss-700">
+                                  {currentCaseId === savedCase.id ? '目前開啟' : '點擊開啟'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteSavedCase(savedCase.id, savedCase.name)}
+                                  className="rounded-full border border-red-200 px-2 py-1 text-[11px] font-black text-red-600 transition hover:bg-red-50"
+                                >
+                                  刪除
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-3 py-5 text-sm leading-6 text-stone-600">
+                          目前還沒有儲存案件。先按旁邊的 💾 儲存，這裡就會出現可開啟的清單。
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={saveCurrentCase}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[#c8d9bd] bg-white text-lg text-moss-800 shadow-sm transition hover:bg-moss-50 hover:text-moss-900"
+                  aria-label="儲存案件"
+                  title={lastSavedAt ? `儲存案件｜最後儲存：${new Date(lastSavedAt).toLocaleString('zh-TW', { hour12: false })}` : '儲存案件'}
+                >
+                  💾
+                </button>
                 <div ref={settingsMenuRef} className="relative z-30 inline-flex">
                   <button
                     type="button"
@@ -2238,7 +2485,7 @@ function App() {
                   </button>
                   {settingsOpen && (
                     <div className="absolute left-0 top-full mt-2 w-72 overflow-hidden rounded-lg border border-[#c8d9bd] bg-white shadow-[0_18px_55px_rgba(35,55,31,0.2)]">
-                      <div className="px-3 py-2 text-xs font-black uppercase tracking-wide text-moss-700">📁 個案管理</div>
+                      <div className="px-3 py-2 text-xs font-black uppercase tracking-wide text-moss-700">公司預設範本</div>
                       <div className="h-px bg-[#e4ecdd]" />
                       <button
                         type="button"
@@ -2341,9 +2588,18 @@ function App() {
               <label className="block rounded-md border-2 border-moss-700 bg-[#edf7e6] p-4 shadow-sm ring-4 ring-[#dcebd3]">
                 <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <span className="inline-flex rounded-full bg-moss-700 px-3 py-1 text-xs font-black tracking-wide text-white">
-                      先選這裡
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex rounded-full bg-moss-700 px-3 py-1 text-xs font-black tracking-wide text-white">
+                        先選這裡
+                      </span>
+                      <button
+                        type="button"
+                        onClick={resetCurrentCase}
+                        className="inline-flex h-7 items-center rounded-full border border-[#b9d0ad] bg-white px-3 text-xs font-black text-moss-800 shadow-sm transition hover:bg-moss-50"
+                      >
+                        開新案件
+                      </button>
+                    </div>
                     <span className="mt-2 block text-base font-black text-moss-900">清潔類型 / 套用範本</span>
                     <span className="mt-1 block text-xs leading-5 text-moss-800">
                       選擇後會自動帶入常用施工項目、標準注意事項與其他事項，所有內容仍可手動編輯。
@@ -2798,7 +3054,7 @@ function App() {
                     />
                   </label>
                 ) : null}
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <label>
                     <span className="mb-1 block text-xs font-bold text-stone-600">付款期限</span>
                     <input
@@ -2825,6 +3081,25 @@ function App() {
                       >
                         待訂
                       </button>
+                    </div>
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-xs font-bold text-stone-600">施作時間</span>
+                    <div className="flex gap-2">
+                      <input
+                        type="time"
+                        value={form.serviceStartTime}
+                        onChange={(event) => updateField('serviceStartTime', event.target.value)}
+                        className="h-10 min-w-0 flex-1 rounded-md border border-[#cfd8c8] bg-white px-2 text-[14px] outline-none transition focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
+                        aria-label="施作開始時間"
+                      />
+                      <input
+                        type="time"
+                        value={form.serviceEndTime}
+                        onChange={(event) => updateField('serviceEndTime', event.target.value)}
+                        className="h-10 min-w-0 flex-1 rounded-md border border-[#cfd8c8] bg-white px-2 text-[14px] outline-none transition focus:border-moss-600 focus:ring-2 focus:ring-moss-100"
+                        aria-label="施作結束時間"
+                      />
                     </div>
                   </label>
                 </div>
@@ -2890,8 +3165,8 @@ function App() {
               <h2 className="text-2xl font-bold tracking-normal">估價單預覽</h2>
             </div>
             <div className="flex gap-2">
-              <button title="建立空白估價單" onClick={resetCurrentCase} className="icon-button">
-                開新案件
+              <button title="加入 Google 行事曆" onClick={addToGoogleCalendar} className="icon-button">
+                加入 Google 行事曆
               </button>
               <button title="複製結果" onClick={copyResult} className="icon-button">
                 複製
